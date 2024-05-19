@@ -28,11 +28,11 @@ for (const entry of entries) {
 }
 
 for (const create of compilers) {
-	describe(create.name, () => {
-		it("should compile TS", async () => {
-			const sourceCode = "export default a ?? b as string";
+	describe(create.name, async () => {
+		const compile = await create();
 
-			const compile = await create();
+		await it("should generate JS & source map", async () => {
+			const sourceCode = "export default a ?? b as string";
 			const js = await compile(sourceCode, "script.ts", true);
 
 			const b64 = js.slice(js.lastIndexOf(",") + 1);
@@ -41,12 +41,25 @@ for (const create of compilers) {
 			assert.deepEqual(sourceMap.sources, ["script.ts"]);
 		});
 
-		it("should transform file to CJS",async () => {
+		await it("should transform file to CJS",async () => {
 			const sourceCode = "export default a ?? b as string";
-			const compile = await create();
-
 			const js = await compile(sourceCode, "script.cts", false);
+
 			assert.doesNotMatch(js, /export default/);
+		});
+
+		await it("should transform decorators",async () => {
+			const sourceCode = `\
+				function addFoo(clazz: any) {
+					clazz.foo = 11;
+				}
+				@addFoo class AClass {}
+			`;
+			const js = await compile(sourceCode, "test/decorators/script.ts", true);
+
+			const AClass = eval(js);
+
+			assert.strictEqual(AClass.foo, 11);
 		});
 	});
 }

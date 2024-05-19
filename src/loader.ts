@@ -13,7 +13,10 @@ async function swcCompiler(): Promise<CompileFn> {
 
 	return async (code, filename, isESM) => {
 		const { tsconfig: { compilerOptions } } = await parse(filename, { cache });
-		const { target = "es2022", module = "esnext" } = compilerOptions;
+		const {
+			target = "es2022", module = "esnext",
+			experimentalDecorators, emitDecoratorMetadata,
+		} = compilerOptions;
 
 		const options: any = {
 			filename,
@@ -26,8 +29,13 @@ async function swcCompiler(): Promise<CompileFn> {
 			jsc: {
 				target: target.toLowerCase(),
 				parser: {
+					decorators: experimentalDecorators,
 					syntax: "typescript",
 					tsx: filename.endsWith("x"),
+				},
+				transform: {
+					legacyDecorator: experimentalDecorators,
+					decoratorMetadata: emitDecoratorMetadata,
 				},
 			},
 		};
@@ -56,7 +64,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 
 	return async (code, sourcefile, isESM) => {
 		const { tsconfig } = await parse(sourcefile, { cache });
-		const module = tsconfig.compilerOptions.module?.toLowerCase();
+		const module = tsconfig.compilerOptions?.module?.toLowerCase();
 
 		const options: TransformOptions = {
 			sourcefile,
@@ -77,8 +85,9 @@ async function tsCompiler(): Promise<CompileFn> {
 	const cache = new TSConfckCache<any>();
 
 	return async (code, fileName, isESM) => {
-		const { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
+		let { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
 
+		compilerOptions = { ...compilerOptions };
 		compilerOptions.sourceMap = true;
 		compilerOptions.inlineSourceMap = true;
 		delete compilerOptions.outDir;
