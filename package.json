@@ -1,10 +1,17 @@
 {
 	"name": "tsfc",
 	"version": "1.0.0",
-	"description": "A modern JavaScript benchmarking tool",
+	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"type": "module",
+	"exports": {
+		".": "./lib/loader.js",
+		"./register": "./lib/register.js"
+	},
+	"files": [
+		"lib/*.{js,d.ts}"
+	],
 	"scripts": {
 		"build": "tsc",
 		"test": "node --import ./lib/register.js --test test/*.spec.ts"
