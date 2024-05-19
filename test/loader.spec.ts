@@ -3,7 +3,7 @@ import assert from "assert";
 import { argv0 } from "process";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { compilers } from "../src/loader.js";
+import { compilers, load } from "../src/loader.ts";
 
 const execAsync = promisify(exec);
 

@@ -6,7 +6,7 @@ import { Readable } from "stream";
 import { once } from "events";
 import { defineSuite } from "esbench";
 import tar from "tar-fs";
-import { compilers, load, typeCache } from "../src/loader.js";
+import { compilers, load, typeCache } from "../src/loader.ts";
 
 /**
  * Originally used TypeScript's repository, but it doesn't compile with SWC.
