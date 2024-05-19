@@ -1,13 +1,12 @@
-import { globSync, readFileSync } from "fs";
+import { existsSync, globSync, readFileSync } from "fs";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import { createGunzip } from "zlib";
-import { Readable } from "node:stream";
+import { Readable } from "stream";
 import { once } from "events";
-import { existsSync } from "node:fs";
 import { defineSuite } from "esbench";
 import tar from "tar-fs";
-import { load, typeCache } from "../src/loader.js";
+import { compilers, load, typeCache } from "../src/loader.js";
 
 /**
  * Originally used TypeScript's repository, but it doesn't compile with SWC.
@@ -39,17 +38,29 @@ if (!existsSync(root)) {
 const urls = globSync("code/**/*.ts", { cwd: root })
 	.map(f => pathToFileURL(join(root, f)).toString());
 
-console.info(`Benchmark with ${urls.length} files`);
+console.info(`Benchmark for transform ${urls.length} files.`);
 
 function nextLoad(url: string) {
 	return { source: readFileSync(url.slice(8)) } as any;
 }
 
+let selectedCompiler;
+
 export default defineSuite({
+	params: {
+		compiler: compilers,
+	},
+	baseline: {
+		type: "compiler",
+		value: compilers[0],
+	},
 	timing: {
 		iterations: 1,
 	},
-	setup(scene) {
+	async setup(scene) {
+		selectedCompiler = await scene.params.compiler();
+		compilers[0] = () => (...args) => selectedCompiler(...args);
+
 		scene.benchAsync("load", () => {
 			typeCache.clear();
 			return Promise.all(urls.map(url => load(url, {} as any, nextLoad)));
