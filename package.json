@@ -1,6 +1,6 @@
 {
 	"name": "tsfc",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "A modern JavaScript benchmarking tool",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
@@ -16,7 +16,10 @@
 		"@kaciras/eslint-config-core": "^3.0.1",
 		"@kaciras/eslint-config-typescript": "^3.0.1",
 		"@types/node": "^20.12.12",
+		"@types/tar-fs": "^2.0.4",
+		"esbench": "^0.2.1",
 		"eslint": "^9.3.0",
+		"tar-fs": "^3.0.6",
 		"typescript": "^5.4.5"
 	},
 	"peerDependencies": {
