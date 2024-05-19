@@ -5,6 +5,10 @@
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"test": "node --import ./lib/register.js --test test/*.spec.ts"
+	},
 	"dependencies": {
 		"tsconfck": "^3.0.3"
 	},

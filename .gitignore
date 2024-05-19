@@ -1,8 +1,8 @@
 .DS_Store
 node_modules
-dist
 debug.js
-coverage
+/lib
+/coverage
 
 # Log files
 *.log
