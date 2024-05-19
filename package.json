@@ -1,0 +1,30 @@
+{
+	"name": "tsfc",
+	"version": "0.1.0",
+	"description": "A modern JavaScript benchmarking tool",
+	"license": "MIT",
+	"author": "Kaciras <Kaciras@outlook.com>",
+	"type": "module",
+	"dependencies": {
+		"tsconfck": "^3.0.3"
+	},
+	"devDependencies": {
+		"@kaciras/eslint-config-core": "^3.0.1",
+		"@kaciras/eslint-config-typescript": "^3.0.1",
+		"@types/node": "^20.12.12",
+		"eslint": "^9.3.0",
+		"typescript": "^5.4.5"
+	},
+	"peerDependencies": {
+		"@swc/core": "^1.5.5",
+		"esbuild": "^0.21.1"
+	},
+	"peerDependenciesMeta": {
+		"esbuild": {
+			"optional": true
+		},
+		"@swc/core": {
+			"optional": true
+		}
+	}
+}
