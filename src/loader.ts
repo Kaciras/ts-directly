@@ -7,12 +7,22 @@ import { parse, TSConfckCache } from "tsconfck";
 
 type CompileFn = (code: string, filename: string, isESM: boolean) => string | Promise<string>;
 
+const configCache = new TSConfckCache<any>();
+
+async function getTSConfig(file: string) {
+	const { tsconfig } = await parse(file, { cache: configCache });
+	if (tsconfig) {
+		tsconfig.compilerOptions ??= {};
+		return tsconfig;
+	}
+	throw new Error(`Cannot find tsconfig.json for ${file}`);
+}
+
 async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
-	const cache = new TSConfckCache<any>();
 
 	return async (code, filename, isESM) => {
-		const { tsconfig: { compilerOptions } } = await parse(filename, { cache });
+		const { compilerOptions } = await getTSConfig(filename);
 		const {
 			target = "es2022", module = "esnext",
 			experimentalDecorators, emitDecoratorMetadata,
@@ -60,17 +70,16 @@ async function swcCompiler(): Promise<CompileFn> {
 
 async function esbuildCompiler(): Promise<CompileFn> {
 	const esbuild = await import("esbuild");
-	const cache = new TSConfckCache<any>();
 
 	return async (code, sourcefile, isESM) => {
-		const { tsconfig } = await parse(sourcefile, { cache });
-		const module = tsconfig.compilerOptions?.module?.toLowerCase();
+		const tsconfigRaw = await getTSConfig(sourcefile);
+		const module = tsconfigRaw.compilerOptions.module?.toLowerCase();
 
 		const options: TransformOptions = {
 			sourcefile,
+			tsconfigRaw,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
-			tsconfigRaw: tsconfig,
 		};
 
 		if (module === "commonjs" || module === "nodenext" && !isESM) {
@@ -82,21 +91,22 @@ async function esbuildCompiler(): Promise<CompileFn> {
 
 async function tsCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
-	const cache = new TSConfckCache<any>();
 
 	return async (code, fileName, isESM) => {
-		let { tsconfig: { compilerOptions } } = await parse(fileName, { cache });
-
+		let { compilerOptions } = await getTSConfig(fileName);
 		compilerOptions = { ...compilerOptions };
 		compilerOptions.sourceMap = true;
 		compilerOptions.inlineSourceMap = true;
+
+		// Avoid modify source path in the source map.
 		delete compilerOptions.outDir;
 
 		/*
 		 * "NodeNext" does not work with transpileModule().
 		 * https://github.com/microsoft/TypeScript/issues/53022
 		 */
-		if (compilerOptions.module.toLowerCase() === "nodenext") {
+		const { module = "esnext" } = compilerOptions;
+		if (module.toLowerCase() === "nodenext") {
 			compilerOptions.module = isESM ? "ESNext" : "CommonJS";
 		}
 
@@ -120,10 +130,10 @@ async function detectTypeScriptCompiler() {
 }
 
 /**
- * For JS files, if they don't exist, then look for the corresponding TS source.
+ * For a JS file, if it doesn't exist, then look for the corresponding TS source.
  *
  * When both `.ts` and `.js` files exist for a name, it's safe to assume
- * that the `.js` is compiled from the `.ts`, I haven't seen an exception yet.
+ * that the `.js` is compiled from the `.ts`.
  */
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
