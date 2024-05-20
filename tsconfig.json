@@ -12,6 +12,5 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"useUnknownInCatchVariables": false,
-		"allowImportingTsExtensions": true
 	}
 }
