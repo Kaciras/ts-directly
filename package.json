@@ -33,18 +33,21 @@
 		"@types/tar-fs": "^2.0.4",
 		"esbench": "^0.2.1",
 		"eslint": "^9.3.0",
-		"tar-fs": "^3.0.6",
-		"typescript": "^5.4.5"
+		"tar-fs": "^3.0.6"
 	},
 	"peerDependencies": {
 		"@swc/core": "^1.5.5",
-		"esbuild": "^0.21.1"
+		"esbuild": "^0.21.1",
+		"typescript": "^5.4.5"
 	},
 	"peerDependenciesMeta": {
 		"esbuild": {
 			"optional": true
 		},
 		"@swc/core": {
+			"optional": true
+		},
+		"typescript": {
 			"optional": true
 		}
 	}
