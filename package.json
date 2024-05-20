@@ -1,5 +1,5 @@
 {
-	"name": "tsfc",
+	"name": "ts-directly",
 	"version": "1.0.0",
 	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
@@ -12,6 +12,9 @@
 		"typescript"
 	],
 	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
 	"exports": {
 		".": "./lib/loader.js",
 		"./register": "./lib/register.js"
