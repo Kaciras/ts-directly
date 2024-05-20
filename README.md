@@ -6,7 +6,7 @@
 
 Let Node execute TypeScript files directly. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
-* Tiny: 3.59 KB + 1 dependency (4.7 KB) gzipped.
+* Tiny: 3.86 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support SWC, esbuild, and tsc.
 * Transform files based on `tsconfig.json`.
 * Support transform `.cts` and `.mts` files, as well as `module: "ESNext"`.
