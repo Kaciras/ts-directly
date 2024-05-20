@@ -12,7 +12,13 @@ const configCache = new TSConfckCache<any>();
 async function getTSConfig(file: string) {
 	const { tsconfig } = await parse(file, { cache: configCache });
 	if (tsconfig) {
-		tsconfig.compilerOptions ??= {};
+		const options = tsconfig.compilerOptions ??= {};
+		if (options.target) {
+			options.target = options.target.toLowerCase();
+		}
+		if (options.module) {
+			options.module = options.module.toLowerCase();
+		}
 		return tsconfig;
 	}
 	throw new Error(`Cannot find tsconfig.json for ${file}`);
@@ -37,7 +43,7 @@ async function swcCompiler(): Promise<CompileFn> {
 			swcrc: false,
 			sourceMaps: "inline",
 			jsc: {
-				target: target.toLowerCase(),
+				target,
 				parser: {
 					decorators: experimentalDecorators,
 					syntax: "typescript",
@@ -56,7 +62,7 @@ async function swcCompiler(): Promise<CompileFn> {
 				options.jsc.target = "es2022";
 		}
 
-		switch (module.toLowerCase()) {
+		switch (module) {
 			case "nodenext":
 				options.module.type = isESM ? "es6" : "commonjs";
 				break;
@@ -73,7 +79,6 @@ async function esbuildCompiler(): Promise<CompileFn> {
 
 	return async (code, sourcefile, isESM) => {
 		const tsconfigRaw = await getTSConfig(sourcefile);
-		const module = tsconfigRaw.compilerOptions.module?.toLowerCase();
 
 		const options: TransformOptions = {
 			sourcefile,
@@ -82,9 +87,15 @@ async function esbuildCompiler(): Promise<CompileFn> {
 			sourcemap: "inline",
 		};
 
-		if (module === "commonjs" || module === "nodenext" && !isESM) {
-			options.format = "cjs";
+		switch (tsconfigRaw.compilerOptions.module) {
+			case "commonjs":
+				options.format = "cjs";
+				break;
+			case "nodenext":
+			case "node16":
+				isESM || (options.format = "cjs");
 		}
+
 		return (await esbuild.transform(code, options)).code;
 	};
 }
@@ -105,9 +116,10 @@ async function tsCompiler(): Promise<CompileFn> {
 		 * "NodeNext" does not work with transpileModule().
 		 * https://github.com/microsoft/TypeScript/issues/53022
 		 */
-		const { module = "esnext" } = compilerOptions;
-		if (module.toLowerCase() === "nodenext") {
-			compilerOptions.module = isESM ? "ESNext" : "CommonJS";
+		switch (compilerOptions.module) {
+			case "node16":
+			case "nodenext":
+				compilerOptions.module = isESM ? "ESNext" : "CommonJS";
 		}
 
 		return ts.transpileModule(code, { fileName, compilerOptions }).outputText;
