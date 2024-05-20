@@ -10,7 +10,7 @@ import { parse, TSConfckCache } from "tsconfck";
  *
  * @param code TypeScript code to compile.
  * @param filename The filename associated with the code currently being compiled
- * @param isESM true if the file should be compiled to ESM, false if CJS.
+ * @param isESM true if the file is ESM, false if is CJS.
  */
 export type CompileFn = (code: string, filename: string, isESM: boolean) => Promise<string>;
 
@@ -117,7 +117,7 @@ async function tsCompiler(): Promise<CompileFn> {
 		delete compilerOptions.outDir;
 
 		/*
-		 * "NodeNext" does not work with transpileModule().
+		 * "Node16" & "NodeNext" do not work with transpileModule().
 		 * https://github.com/microsoft/TypeScript/issues/53022
 		 */
 		switch (compilerOptions.module) {
