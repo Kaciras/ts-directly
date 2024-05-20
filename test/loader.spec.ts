@@ -6,9 +6,10 @@ import { promisify } from "util";
 import { compilers, load } from "../src/loader.ts";
 
 const execAsync = promisify(exec);
+const node = JSON.stringify(argv0);
 
 function runFixture(name: string) {
-	return execAsync(`"${argv0}" --import ./lib/register.js test/fixtures/${name}`);
+	return execAsync(`${node} --import ./lib/register.js test/fixtures/${name}`);
 }
 
 const entries = [
@@ -27,13 +28,26 @@ for (const entry of entries) {
 	});
 }
 
+it("should fail when no compiler installed", async () => {
+	const compilersBackup = [...compilers];
+	compilers.length = 0;
+	try {
+		const url = "file://script.ts";
+		const p = load(url, {} as any, () => ({ source: "" } as any));
+		await assert.rejects(p as Promise<any>);
+	} finally {
+		compilers.length = 0;
+		compilers.push(...compilersBackup);
+	}
+});
+
 for (const create of compilers) {
 	describe(create.name, async () => {
 		const compile = await create();
 
 		await it("should generate JS & source map", async () => {
-			const sourceCode = "export default a ?? b as string";
-			const js = await compile(sourceCode, "script.ts", true);
+			const ts = "export default a ?? b as string";
+			const js = await compile(ts, "script.ts", true);
 
 			const b64 = js.slice(js.lastIndexOf(",") + 1);
 			const sourceMap = JSON.parse(Buffer.from(b64, "base64").toString());
@@ -41,25 +55,23 @@ for (const create of compilers) {
 			assert.deepEqual(sourceMap.sources, ["script.ts"]);
 		});
 
-		await it("should transform file to CJS",async () => {
-			const sourceCode = "export default a ?? b as string";
-			const js = await compile(sourceCode, "script.cts", false);
+		await it("should transform file to CJS", async () => {
+			const ts = "export default a ?? b as string";
+			const js = await compile(ts, "script.cts", false);
 
 			assert.doesNotMatch(js, /export default/);
 		});
 
-		await it("should transform decorators",async () => {
-			const sourceCode = `\
+		await it.only("should transform decorators", async () => {
+			const ts = `\
 				function addFoo(clazz: any) {
 					clazz.foo = 11;
 				}
-				@addFoo class AClass {}
+				@addFoo class TestClass {}
 			`;
-			const js = await compile(sourceCode, "test/decorators/script.ts", true);
+			const js = await compile(ts, "test/decorators/script.ts", true);
 
-			const AClass = eval(js);
-
-			assert.strictEqual(AClass.foo, 11);
+			assert.strictEqual(eval(js).foo, 11);
 		});
 	});
 }

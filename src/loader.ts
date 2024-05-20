@@ -5,7 +5,14 @@ import { dirname, join, sep } from "path";
 import { readFileSync } from "fs";
 import { parse, TSConfckCache } from "tsconfck";
 
-type CompileFn = (code: string, filename: string, isESM: boolean) => string | Promise<string>;
+/**
+ * Compile the module from TypeScript to JavaScript.
+ *
+ * @param code TypeScript code to compile.
+ * @param filename The filename associated with the code currently being compiled
+ * @param isESM true if the file should be compiled to ESM, false if CJS.
+ */
+export type CompileFn = (code: string, filename: string, isESM: boolean) => Promise<string>;
 
 const configCache = new TSConfckCache<any>();
 
@@ -13,12 +20,8 @@ async function getTSConfig(file: string) {
 	const { tsconfig } = await parse(file, { cache: configCache });
 	if (tsconfig) {
 		const options = tsconfig.compilerOptions ??= {};
-		if (options.target) {
-			options.target = options.target.toLowerCase();
-		}
-		if (options.module) {
-			options.module = options.module.toLowerCase();
-		}
+		options.target &&= options.target.toLowerCase();
+		options.module &&= options.module.toLowerCase();
 		return tsconfig;
 	}
 	throw new Error(`Cannot find tsconfig.json for ${file}`);
@@ -64,6 +67,7 @@ async function swcCompiler(): Promise<CompileFn> {
 
 		switch (module) {
 			case "nodenext":
+			case "node16":
 				options.module.type = isESM ? "es6" : "commonjs";
 				break;
 			case "commonjs":
@@ -141,6 +145,45 @@ async function detectTypeScriptCompiler() {
 	throw new Error("No TypeScript transformer found");
 }
 
+const node_modules = sep + "node_modules";
+
+// make `load` 15.47% faster
+export const typeCache = new Map<string, ModuleFormat>();
+
+function cacheAndReturn(dir: string, type: ModuleFormat) {
+	typeCache.set(dir, type);
+	return type;
+}
+
+/**
+ * Find nearest package.json and detect the file is ESM or CJS.
+ *
+ * typescript has `getImpliedNodeFormatForFile`, but we do not require user install it.
+ * Node also has such a function, but does not export it.
+ *
+ * https://nodejs.org/docs/latest/api/packages.html#type
+ */
+function getPackageType(filename: string): ModuleFormat {
+	const dir = dirname(filename);
+
+	const cached = typeCache.get(dir);
+	if (cached) {
+		return cached;
+	}
+	try {
+		const json = readFileSync(join(dir, "package.json"), "utf8");
+		return cacheAndReturn(dir, JSON.parse(json).type ?? "commonjs");
+	} catch (e) {
+		if (e.code !== "ENOENT") throw e;
+	}
+
+	if (!dir || dir.endsWith(node_modules)) {
+		return cacheAndReturn(dir, "commonjs");
+	} else {
+		return cacheAndReturn(dir, getPackageType(dir));
+	}
+}
+
 /**
  * For a JS file, if it doesn't exist, then look for the corresponding TS source.
  *
@@ -201,42 +244,3 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 
 	return { source, format, shortCircuit: true };
 };
-
-const node_modules = sep + "node_modules";
-
-// make `load` 15.47% faster
-export const typeCache = new Map<string, ModuleFormat>();
-
-function cacheAndReturn(dir: string, type: ModuleFormat) {
-	typeCache.set(dir, type);
-	return type;
-}
-
-/**
- * Find nearest package.json and detect the file is ESM or CJS.
- *
- * typescript has `getImpliedNodeFormatForFile`, but we do not require user install it.
- * Node also has such a function, but does not export it.
- *
- * https://nodejs.org/docs/latest/api/packages.html#type
- */
-function getPackageType(filename: string): ModuleFormat {
-	const dir = dirname(filename);
-
-	const cached = typeCache.get(dir);
-	if (cached) {
-		return cached;
-	}
-	try {
-		const json = readFileSync(join(dir, "package.json"), "utf8");
-		return cacheAndReturn(dir, JSON.parse(json).type ?? "commonjs");
-	} catch (e) {
-		if (e.code !== "ENOENT") throw e;
-	}
-
-	if (!dir || dir.endsWith(node_modules)) {
-		return cacheAndReturn(dir, "commonjs");
-	} else {
-		return cacheAndReturn(dir, getPackageType(dir));
-	}
-}

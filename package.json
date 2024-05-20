@@ -4,6 +4,13 @@
 	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
+	"keywords": [
+		"loader",
+		"compiler",
+		"node",
+		"esm",
+		"typescript"
+	],
 	"type": "module",
 	"exports": {
 		".": "./lib/loader.js",
