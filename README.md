@@ -1,6 +1,10 @@
 # TS Directly
 
-Let Node execute TypeScript files directly, with fast compiler. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
+![NPM Version](https://img.shields.io/npm/v/ts-directly?style=flat-square)
+![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)
+
+Let Node execute TypeScript files directly. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
 * Tiny: 3.59 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support SWC, esbuild, and tsc.

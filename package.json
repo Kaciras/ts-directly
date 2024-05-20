@@ -4,6 +4,10 @@
 	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Kaciras/ts-directly"
+	},
 	"keywords": [
 		"loader",
 		"compiler",
@@ -11,10 +15,10 @@
 		"esm",
 		"typescript"
 	],
-	"type": "module",
-	"publishConfig": {
-		"access": "public"
+	"engines": {
+		"node": ">=18.19"
 	},
+	"type": "module",
 	"exports": {
 		".": "./lib/loader.js",
 		"./register": "./lib/register.js"
