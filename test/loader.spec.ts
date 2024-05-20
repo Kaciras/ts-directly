@@ -32,7 +32,7 @@ it("should fail when no compiler installed", async () => {
 	const compilersBackup = [...compilers];
 	compilers.length = 0;
 	try {
-		const url = "file://script.ts";
+		const url = "file://module.ts";
 		const p = load(url, {} as any, () => ({ source: "" } as any));
 		await assert.rejects(p as Promise<any>);
 	} finally {
@@ -46,32 +46,38 @@ for (const create of compilers) {
 		const compile = await create();
 
 		await it("should generate JS & source map", async () => {
-			const ts = "export default a ?? b as string";
-			const js = await compile(ts, "script.ts", true);
+			const ts = "export default <string> a ?? b;";
+			const js = await compile(ts, "module.ts", true);
 
 			const b64 = js.slice(js.lastIndexOf(",") + 1);
 			const sourceMap = JSON.parse(Buffer.from(b64, "base64").toString());
 			assert.match(js, /export default a \?\? b;/);
-			assert.deepEqual(sourceMap.sources, ["script.ts"]);
+			assert.deepEqual(sourceMap.sources, ["module.ts"]);
 		});
 
 		await it("should transform file to CJS", async () => {
-			const ts = "export default a ?? b as string";
-			const js = await compile(ts, "script.cts", false);
+			const ts = "export default <string> a ?? b;";
+			const js = await compile(ts, "module.cts", false);
 
 			assert.doesNotMatch(js, /export default/);
 		});
 
-		await it.only("should transform decorators", async () => {
+		await it("should transform decorators", async () => {
 			const ts = `\
 				function addFoo(clazz: any) {
 					clazz.foo = 11;
 				}
 				@addFoo class TestClass {}
 			`;
-			const js = await compile(ts, "test/decorators/script.ts", true);
+			const js = await compile(ts, "test/decorators/module.ts", true);
 
 			assert.strictEqual(eval(js).foo, 11);
+		});
+
+		await it("should support JSX", async () => {
+			const ts = "<div>Hello World</div>";
+			const js = await compile(ts, "test/jsx/module.tsx", true);
+			assert.match(js, /} from "react\/jsx-runtime";/);
 		});
 	});
 }

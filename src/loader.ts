@@ -59,6 +59,14 @@ async function swcCompiler(): Promise<CompileFn> {
 			},
 		};
 
+		options.jsc.transform.react = {
+			runtime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
+			useBuiltins: true,
+			pragma: compilerOptions.jsxFactory,
+			pragmaFrag: compilerOptions.jsxFragmentFactory,
+			importSource: compilerOptions.jsxImportSource ?? "react",
+		};
+
 		switch (options.jsc.target) {
 			case "esnext":
 			case "latest":
