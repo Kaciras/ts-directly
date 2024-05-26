@@ -49,10 +49,13 @@ for (const create of compilers) {
 			const ts = "export default <string> a ?? b;";
 			const js = await compile(ts, "module.ts", true);
 
+			assert.match(js, /export default a \?\? b;/);
+			assert.doesNotMatch(js, /Object\.defineProperty/);
+
 			const b64 = js.slice(js.lastIndexOf(",") + 1);
 			const sourceMap = JSON.parse(Buffer.from(b64, "base64").toString());
-			assert.match(js, /export default a \?\? b;/);
 			assert.deepEqual(sourceMap.sources, ["module.ts"]);
+			assert.strictEqual(sourceMap.sourcesContent, undefined);
 		});
 
 		await it("should transform file to CJS", async () => {
@@ -60,6 +63,20 @@ for (const create of compilers) {
 			const js = await compile(ts, "module.cts", false);
 
 			assert.doesNotMatch(js, /export default/);
+		});
+
+		await it("should transform class fields", async () => {
+			const ts = `\
+				class CleverBase {
+					get p() {}
+					set p(_) {}
+				}
+				class Simple extends CleverBase {
+					p = "just a value";
+				}
+			`;
+			const js = await compile(ts, "test/ignores/module.ts", true);
+			assert.match(js, /Object\.defineProperty/);
 		});
 
 		await it("should transform decorators", async () => {

@@ -34,7 +34,7 @@ async function swcCompiler(): Promise<CompileFn> {
 		const { compilerOptions } = await getTSConfig(filename);
 		const {
 			target = "es2022", module = "esnext",
-			experimentalDecorators, emitDecoratorMetadata,
+			experimentalDecorators, emitDecoratorMetadata, useDefineForClassFields,
 		} = compilerOptions;
 
 		const options: any = {
@@ -47,7 +47,7 @@ async function swcCompiler(): Promise<CompileFn> {
 			inlineSourcesContent: false,
 			swcrc: false,
 			jsc: {
-				target,
+				target: target === "esnext" ? "es2022" : target,
 				externalHelpers: compilerOptions.importHelpers,
 				parser: {
 					decorators: experimentalDecorators,
@@ -55,6 +55,7 @@ async function swcCompiler(): Promise<CompileFn> {
 					tsx: filename.endsWith("x"),
 				},
 				transform: {
+					useDefineForClassFields,
 					legacyDecorator: experimentalDecorators,
 					decoratorMetadata: emitDecoratorMetadata,
 				},
@@ -68,12 +69,6 @@ async function swcCompiler(): Promise<CompileFn> {
 			pragmaFrag: compilerOptions.jsxFragmentFactory,
 			importSource: compilerOptions.jsxImportSource ?? "react",
 		};
-
-		switch (options.jsc.target) {
-			case "esnext":
-			case "latest":
-				options.jsc.target = "es2022";
-		}
 
 		switch (module) {
 			case "nodenext":
@@ -97,6 +92,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 		const options: TransformOptions = {
 			sourcefile,
 			tsconfigRaw,
+			target: tsconfigRaw.compilerOptions.target,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
 			sourcesContent: false,

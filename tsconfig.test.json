@@ -1,5 +1,6 @@
 {
-	"extends": "tsconfig.json",
+	"extends": "./tsconfig.json",
+	"include": ["benchmark/*.ts", "test/**/*.ts"],
 	"compilerOptions": {
 		"noEmit": true,
 		"allowImportingTsExtensions": true
