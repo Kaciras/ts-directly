@@ -43,10 +43,12 @@ async function swcCompiler(): Promise<CompileFn> {
 				noInterop: !compilerOptions.esModuleInterop,
 				type: "es6",
 			},
-			swcrc: false,
 			sourceMaps: "inline",
+			inlineSourcesContent: false,
+			swcrc: false,
 			jsc: {
 				target,
+				externalHelpers: compilerOptions.importHelpers,
 				parser: {
 					decorators: experimentalDecorators,
 					syntax: "typescript",
@@ -97,6 +99,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 			tsconfigRaw,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
+			sourcesContent: false,
 		};
 
 		switch (tsconfigRaw.compilerOptions.module) {
@@ -118,7 +121,6 @@ async function tsCompiler(): Promise<CompileFn> {
 	return async (code, fileName, isESM) => {
 		let { compilerOptions } = await getTSConfig(fileName);
 		compilerOptions = { ...compilerOptions };
-		compilerOptions.sourceMap = true;
 		compilerOptions.inlineSourceMap = true;
 
 		// Avoid modify source path in the source map.
