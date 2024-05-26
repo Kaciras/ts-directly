@@ -1,22 +1,12 @@
 import { existsSync, globSync, readFileSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { pathToFileURL } from "url";
 import { createGunzip } from "zlib";
 import { Readable } from "stream";
 import { once } from "events";
 import { defineSuite } from "esbench";
-import tar from "tar-fs";
-import { CompileFn, compilers, load, typeCache } from "../src/loader.ts";
-
-/*
- * pnpm exec esbench --file loader.ts
- *
- * | No. | Name |        compiler |      time |  time.SD | time.ratio |
- * | --: | ---: | --------------: | --------: | -------: | ---------: |
- * |   0 | load |     swcCompiler | 329.79 ms |   2.9 ms |      0.00% |
- * |   1 | load | esbuildCompiler |    372 ms |  9.41 ms |    +12.80% |
- * |   2 | load |      tsCompiler |    4.96 s | 37.47 ms |  +1403.45% |
- */
+import * as tar from "tar-fs";
+import { CompileFn, compilers, load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
 
 /**
  * Originally used TypeScript's repository, but it doesn't compile with SWC.
@@ -25,7 +15,8 @@ import { CompileFn, compilers, load, typeCache } from "../src/loader.ts";
 const ASSET_VERSION = "8.1.1";
 const ASSET_URL = `https://github.com/storybookjs/storybook/archive/refs/tags/v${ASSET_VERSION}.tar.gz`;
 
-const dataDir = join(import.meta.dirname, `../storybook-${ASSET_VERSION}`);
+const root = dirname(import.meta.dirname);
+const dataDir = join(root, `storybook-${ASSET_VERSION}`);
 
 if (!existsSync(dataDir)) {
 	console.info("Downloading & extracting benchmark data...");
@@ -40,7 +31,7 @@ if (!existsSync(dataDir)) {
 
 	const extracting = Readable.fromWeb(body as any)
 		.pipe(createGunzip())
-		.pipe(tar.extract(import.meta.dirname, { filter }));
+		.pipe(tar.extract(root, { filter }));
 
 	await once(extracting, "finish");
 }
