@@ -14,10 +14,10 @@ import { parse, TSConfckCache } from "tsconfck";
  */
 export type CompileFn = (code: string, filename: string, isESM: boolean) => Promise<string>;
 
-const configCache = new TSConfckCache<any>();
+export const tsconfigCache = new TSConfckCache<any>();
 
 async function getTSConfig(file: string) {
-	const { tsconfig } = await parse(file, { cache: configCache });
+	const { tsconfig } = await parse(file, { cache: tsconfigCache });
 	if (tsconfig) {
 		const options = tsconfig.compilerOptions ??= {};
 		options.target &&= options.target.toLowerCase();

@@ -39,3 +39,15 @@ await import("./file/import/ts/modules.ts");
 ## No Alias Support
 
 Resolving alias is outside of the scope for ts-directly, because TypeScript does not change how import paths are emitted by `tsc`.
+
+## Performance
+
+Transform 1480 TS files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/main/benchmark/loader.ts).
+
+OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
+
+| No. | Name |        compiler |      time |  time.SD | time.ratio |
+|----:|-----:|----------------:|----------:|---------:|-----------:|
+|   0 | load |     swcCompiler | 354.88 ms |  3.72 ms |      0.00% |
+|   1 | load | esbuildCompiler | 402.14 ms |  5.43 ms |    +13.32% |
+|   2 | load |      tsCompiler |    4.97 s | 29.16 ms |  +1300.39% |

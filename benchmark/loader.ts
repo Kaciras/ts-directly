@@ -36,10 +36,12 @@ if (!existsSync(dataDir)) {
 	await once(extracting, "finish");
 }
 
-const urls = (globSync("code/**/*.ts", { cwd: dataDir }) as string[])
-	.map(f => pathToFileURL(join(dataDir, f)).toString());
+const urls = globSync("code/**/*.ts", { cwd: dataDir }) as string[];
+console.info(`Benchmark for import ${urls.length} files.`);
 
-console.info(`Benchmark for transform ${urls.length} files.`);
+function nextResolve(file: string) {
+	return { url: pathToFileURL(join(dataDir, file)).toString() };
+}
 
 function nextLoad(url: string) {
 	return {
@@ -48,8 +50,15 @@ function nextLoad(url: string) {
 	};
 }
 
+const ctx = {} as any;
+
+async function doImport(file: string) {
+	return load((await resolve(file, ctx, nextResolve)).url, ctx, nextLoad);
+}
+
 let selectedCompiler: CompileFn;
 
+// Run benchmark: pnpm exec esbench --file loader.ts
 export default defineSuite({
 	params: {
 		compiler: compilers,
@@ -66,8 +75,9 @@ export default defineSuite({
 		compilers[0] = async () => (...args) => selectedCompiler(...args);
 
 		scene.benchAsync("load", () => {
+			tsconfigCache.clear();
 			typeCache.clear();
-			return Promise.all(urls.map(url => load(url, {} as any, nextLoad)));
+			return Promise.all(urls.map(doImport));
 		});
 	},
 });

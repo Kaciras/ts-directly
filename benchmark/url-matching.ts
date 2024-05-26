@@ -37,11 +37,7 @@ function isJS(spec: string) {
 }
 
 export default defineSuite(scene => {
-	scene.bench("manual matching", () => {
-		return isFile(url) && isJS(url);
-	});
-	scene.bench("double regexp", () => {
-		return fileRE.test(url) && jsRE.test(url);
-	});
 	scene.bench("single regexp", () => jsFileRE.test(url));
+	scene.bench("double regexp", () => fileRE.test(url) && jsRE.test(url));
+	scene.bench("manual matching", () => isFile(url) && isJS(url));
 });
