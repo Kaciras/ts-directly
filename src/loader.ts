@@ -88,23 +88,24 @@ async function esbuildCompiler(): Promise<CompileFn> {
 
 	return async (code, sourcefile, isESM) => {
 		const tsconfigRaw = await getTSConfig(sourcefile);
+		const { target, module } =tsconfigRaw.compilerOptions;
 
 		const options: TransformOptions = {
 			sourcefile,
 			tsconfigRaw,
-			target: tsconfigRaw.compilerOptions.target,
+			target,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
 			sourcesContent: false,
 		};
 
-		switch (tsconfigRaw.compilerOptions.module) {
-			case "commonjs":
-				options.format = "cjs";
-				break;
+		switch (module) {
 			case "nodenext":
 			case "node16":
 				isESM || (options.format = "cjs");
+				break;
+			case "commonjs":
+				options.format = "cjs";
 		}
 
 		return (await esbuild.transform(code, options)).code;
@@ -200,6 +201,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
+		// Two regexps is faster than one, see benchmark/url-matching.ts
 		const isFile = /^(?:file:|\.{1,2}\/)/i.test(specifier);
 		const isJSFile = isFile && /\.[cm]?jsx?$/i.test(specifier);
 

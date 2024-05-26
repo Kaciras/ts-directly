@@ -20,7 +20,10 @@
 	},
 	"type": "module",
 	"exports": {
-		".": "./lib/loader.js",
+		".": {
+			"default": "./lib/loader.js",
+			"types": "./lib/loader.d.ts"
+		},
 		"./register": "./lib/register.js"
 	},
 	"files": [

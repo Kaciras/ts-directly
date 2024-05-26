@@ -6,8 +6,8 @@
 
 Let Node execute TypeScript files directly. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
-* Tiny: 3.86 KB + 1 dependency (4.7 KB) gzipped.
-* Automatic detects installed compilers, support SWC, esbuild, and tsc.
+* Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
+* Automatic detects installed compilers, support [SWC](https://swc.rs/), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on `tsconfig.json`.
 * Support transform `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
@@ -39,6 +39,8 @@ await import("./file/import/ts/modules.ts");
 ## No Alias Support
 
 Resolving alias is outside of the scope for ts-directly, because TypeScript does not change how import paths are emitted by `tsc`.
+
+Also, directory import and omitting file extension are not supported.
 
 ## Performance
 

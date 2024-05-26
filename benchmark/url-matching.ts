@@ -1,5 +1,14 @@
 import { defineSuite } from "esbench";
 
+/*
+ * pnpm exec esbench --file url-matching.ts
+ *
+ * | No. |            Name |     time | time.SD |
+ * | --: | --------------: | -------: | ------: |
+ * |   0 |   single regexp | 91.24 ns | 0.09 ns |
+ * |   1 |   double regexp | 30.35 ns | 0.09 ns |
+ * |   2 | manual matching |  7.34 ns | 0.03 ns |
+ */
 const url = "file:/usr/local/projects/javascript/esbench/docs/node_modules/.pnpm/monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution.js";
 
 const fileRE = /^(?:file:|\.{1,2}\/)/i;
