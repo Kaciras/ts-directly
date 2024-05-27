@@ -1,3 +1,4 @@
+import type { Options as SwcOptions } from "@swc/core";
 import type { TransformOptions } from "esbuild";
 import { LoadHook, ModuleFormat, ResolveHook } from "module";
 import { fileURLToPath } from "url";
@@ -37,10 +38,10 @@ async function swcCompiler(): Promise<CompileFn> {
 			experimentalDecorators, emitDecoratorMetadata, useDefineForClassFields,
 		} = compilerOptions;
 
-		const options: any = {
+		const options: SwcOptions = {
 			filename,
 			module: {
-				noInterop: !compilerOptions.esModuleInterop,
+				importInterop: compilerOptions.esModuleInterop ? "swc" : "none",
 				type: "es6",
 			},
 			sourceMaps: "inline",
@@ -66,9 +67,8 @@ async function swcCompiler(): Promise<CompileFn> {
 			},
 		};
 
-		options.jsc.transform.react = {
+		options.jsc!.transform!.react = {
 			runtime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
-			useBuiltins: true,
 			pragma: compilerOptions.jsxFactory,
 			pragmaFrag: compilerOptions.jsxFragmentFactory,
 			importSource: compilerOptions.jsxImportSource ?? "react",
@@ -77,10 +77,10 @@ async function swcCompiler(): Promise<CompileFn> {
 		switch (module) {
 			case "nodenext":
 			case "node16":
-				options.module.type = isESM ? "es6" : "commonjs";
+				options.module!.type = isESM ? "es6" : "commonjs";
 				break;
 			case "commonjs":
-				options.module.type = "commonjs";
+				options.module!.type = "commonjs";
 		}
 
 		return (await swc.transform(code, options)).code;
