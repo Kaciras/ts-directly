@@ -43,16 +43,16 @@ async function swcCompiler(): Promise<CompileFn> {
 				noInterop: !compilerOptions.esModuleInterop,
 				type: "es6",
 			},
-			minify: {
-				compress: false,
-				mangle: false,
-			},
 			sourceMaps: "inline",
 			inlineSourcesContent: false,
 			swcrc: false,
 			jsc: {
 				target: target === "esnext" ? "es2022" : target,
 				externalHelpers: compilerOptions.importHelpers,
+				minify: {
+					compress: false,
+					mangle: false,
+				},
 				parser: {
 					decorators: experimentalDecorators,
 					syntax: "typescript",
