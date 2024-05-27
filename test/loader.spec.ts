@@ -58,6 +58,17 @@ for (const create of compilers) {
 			assert.strictEqual(sourceMap.sourcesContent, undefined);
 		});
 
+		await it.only("should remove comments", async () => {
+			const ts = `\
+				/* Block comment */
+				// Line comment
+				/** Document comment */
+				export default () => {};
+			`;
+			const js = await compile(ts, "module.ts", true);
+			assert.doesNotMatch(js, /\/[*/][* ]/);
+		});
+
 		await it("should transform file to CJS", async () => {
 			const ts = "export default <string> a ?? b;";
 			const js = await compile(ts, "module.cts", false);

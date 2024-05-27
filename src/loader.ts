@@ -43,6 +43,10 @@ async function swcCompiler(): Promise<CompileFn> {
 				noInterop: !compilerOptions.esModuleInterop,
 				type: "es6",
 			},
+			minify: {
+				compress: false,
+				mangle: false,
+			},
 			sourceMaps: "inline",
 			inlineSourcesContent: false,
 			swcrc: false,
@@ -88,7 +92,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 
 	return async (code, sourcefile, isESM) => {
 		const tsconfigRaw = await getTSConfig(sourcefile);
-		const { target, module } =tsconfigRaw.compilerOptions;
+		const { target, module } = tsconfigRaw.compilerOptions;
 
 		const options: TransformOptions = {
 			sourcefile,
@@ -116,9 +120,12 @@ async function tsCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
 
 	return async (code, fileName, isESM) => {
-		let { compilerOptions } = await getTSConfig(fileName);
-		compilerOptions = { ...compilerOptions };
-		compilerOptions.inlineSourceMap = true;
+		const tsconfig = await getTSConfig(fileName);
+		const compilerOptions = {
+			...tsconfig.compilerOptions,
+			removeComments: true,
+			inlineSourceMap: true,
+		};
 
 		// Avoid modify source path in the source map.
 		delete compilerOptions.outDir;
