@@ -4,7 +4,7 @@ import { pathToFileURL } from "url";
 import { createGunzip } from "zlib";
 import { Readable } from "stream";
 import { once } from "events";
-import { defineSuite } from "esbench";
+import { defineSuite, Profiler } from "esbench";
 import * as tar from "tar-fs";
 import { CompileFn, compilers, load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
 
@@ -27,7 +27,7 @@ if (!existsSync(dataDir)) {
 
 	// Broken files & declarations, we do not compile them.
 	const filter = (name: string) =>
-		name.includes("__testfixtures__") || name.endsWith(".d.ts");
+		name.includes("__testfixtures__") || name.endsWith(".d.ts") || name.includes("__mocks");
 
 	const extracting = Readable.fromWeb(body as any)
 		.pipe(createGunzip())
@@ -58,6 +58,19 @@ async function doImport(file: string) {
 
 let selectedCompiler: CompileFn;
 
+const fileSizeProfiler: Profiler = {
+	onStart: ctx => ctx.defineMetric({
+		key: "filesize",
+		format: "{dataSize}",
+		analysis: 1,
+		lowerIsBetter: true,
+	}),
+	async onCase(ctx, case_, metrics) {
+		const results = await case_.invoke() as any[];
+		metrics.filesize = results.reduce((v, c) => v + c.source.length, 0);
+	},
+};
+
 // Run benchmark: pnpm exec esbench --file loader.ts
 export default defineSuite({
 	params: {
@@ -67,6 +80,7 @@ export default defineSuite({
 		type: "compiler",
 		value: compilers[0],
 	},
+	profilers: [fileSizeProfiler],
 	timing: {
 		iterations: 1,
 	},

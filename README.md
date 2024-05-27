@@ -48,8 +48,8 @@ Transform 1480 TS files, see [benchmark/loader.ts](https://github.com/Kaciras/ts
 
 OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
-| No. | Name |        compiler |      time |  time.SD | time.ratio |
-|----:|-----:|----------------:|----------:|---------:|-----------:|
-|   0 | load |     swcCompiler | 354.88 ms |  3.72 ms |      0.00% |
-|   1 | load | esbuildCompiler | 402.14 ms |  5.43 ms |    +13.32% |
-|   2 | load |      tsCompiler |    4.97 s | 29.16 ms |  +1300.39% |
+| No. | Name |        compiler | filesize | filesize.ratio |        time |   time.SD | time.ratio |
+|----:|-----:|----------------:|---------:|---------------:|------------:|----------:|-----------:|
+|   0 | load |     swcCompiler | 9.36 MiB |          0.00% |   355.13 ms |   3.75 ms |      0.00% |
+|   1 | load | esbuildCompiler | 8.98 MiB |         -4.09% |   398.08 ms |   9.14 ms |    +12.10% |
+|   2 | load |      tsCompiler | 9.38 MiB |         +0.18% | 5,028.82 ms | 126.26 ms |  +1316.07% |
