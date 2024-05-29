@@ -17,6 +17,8 @@ export type CompileFn = (code: string, filename: string, isESM: boolean) => Prom
 
 export const tsconfigCache = new TSConfckCache<any>();
 
+const node_modules = sep + "node_modules";
+
 async function getTSConfig(file: string) {
 	const { tsconfig } = await parse(file, { cache: tsconfigCache });
 	if (tsconfig) {
@@ -159,8 +161,6 @@ async function detectTypeScriptCompiler() {
 	throw new Error("No TypeScript transformer found");
 }
 
-const node_modules = sep + "node_modules";
-
 // make `load` 15.47% faster
 export const typeCache = new Map<string, ModuleFormat>();
 
@@ -203,6 +203,8 @@ function getPackageType(filename: string): ModuleFormat {
  *
  * When both `.ts` and `.js` files exist for a name, it's safe to assume
  * that the `.js` is compiled from the `.ts`.
+ *
+ * TODO: Cannot intercept require() with non-exists files.
  */
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
@@ -255,7 +257,9 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 	if (!compile) {
 		compile = await detectTypeScriptCompiler();
 	}
-	const source = await compile(code, filename, format === "module");
-
-	return { source, format, shortCircuit: true };
+	return {
+		shortCircuit: true,
+		format,
+		source: await compile(code, filename, format === "module"),
+	};
 };

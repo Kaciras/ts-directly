@@ -4,6 +4,7 @@ node_modules
 debug.js
 /lib
 /coverage
+/reports
 
 # Log files
 *.log

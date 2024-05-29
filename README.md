@@ -44,7 +44,7 @@ Also, directory import and omitting file extension are not supported.
 
 ## Performance
 
-Transform 1468 TS files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
+Transform 1468 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
 
 OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
