@@ -28,6 +28,10 @@ for (const entry of entries) {
 	});
 }
 
+it("currently cannot intercept require with non-exist file", () => {
+	return assert.rejects(runFixture("require2.cts"));
+});
+
 it("should fail when no compiler installed", async () => {
 	const compilersBackup = [...compilers];
 	compilers.length = 0;
@@ -58,7 +62,7 @@ for (const create of compilers) {
 			assert.strictEqual(sourceMap.sourcesContent, undefined);
 		});
 
-		await it.only("should remove comments", async () => {
+		await it("should remove comments", async () => {
 			const ts = `\
 				/* Block comment */
 				// Line comment
