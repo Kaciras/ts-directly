@@ -150,7 +150,11 @@ export const compilers = [swcCompiler, esbuildCompiler, tsCompiler];
 
 let compile: CompileFn;
 
-async function detectTypeScriptCompiler() {
+/**
+ * Import a supported TypeScript compiler, try the ones listed in
+ * `compilers` in order, and throw an exception if none of them are installed.
+ */
+export async function detectTypeScriptCompiler() {
 	for (const create of compilers) {
 		try {
 			return await create();
@@ -217,6 +221,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 		if (!isJSFile || e.code !== "ERR_MODULE_NOT_FOUND") {
 			throw e;
 		}
+		// Replace "j" with "t" in extension and resolve again.
 		if (specifier.at(-1) !== "x") {
 			return nextResolve(specifier.slice(0, -2) + "ts", context);
 		} else {
@@ -242,6 +247,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 	const code = ts.source!.toString();
 	const filename = fileURLToPath(url);
 
+	// Detect module type by extension and package.json
 	let format: ModuleFormat;
 	switch (match[0].charCodeAt(1)) {
 		case 99: /* c */
