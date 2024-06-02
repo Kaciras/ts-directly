@@ -31,15 +31,15 @@
 		"test": "node --import ./lib/register.js --test test/*.spec.ts"
 	},
 	"dependencies": {
-		"tsconfck": "^3.0.3"
+		"tsconfck": "^3.1.0"
 	},
 	"devDependencies": {
-		"@kaciras/eslint-config-core": "^3.0.1",
-		"@kaciras/eslint-config-typescript": "^3.0.1",
-		"@types/node": "^20.12.12",
+		"@kaciras/eslint-config-core": "^3.0.3",
+		"@kaciras/eslint-config-typescript": "^3.0.3",
+		"@types/node": "^20.14.0",
 		"@types/tar-fs": "^2.0.4",
-		"esbench": "^0.2.4",
-		"eslint": "^9.3.0",
+		"esbench": "^0.3.0",
+		"eslint": "^9.4.0",
 		"tar-fs": "^3.0.6"
 	},
 	"peerDependencies": {
