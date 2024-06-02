@@ -1,6 +1,6 @@
 {
 	"name": "ts-directly",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
