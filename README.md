@@ -4,7 +4,7 @@
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)
 
-Let Node execute TypeScript files directly. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
+Let Node execute TypeScript files directly with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support [SWC](https://swc.rs/), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
@@ -36,6 +36,21 @@ register("ts-directly", import.meta.url);
 await import("./file/import/ts/modules.ts");
 ```
 
+Use the API:
+
+```javascript
+import { detectTypeScriptCompiler } from "ts-directly";
+import { readFileSync, writeFileSync } from "fs";
+
+const compile = await detectTypeScriptCompiler();
+
+const file = "module.ts";
+const isESM = true;
+const tsCode = readFileSync(file, "utf8");
+
+const jsCode = await compile(tsCode, file, isESM);
+```
+
 ## No Alias Support
 
 Resolving alias is outside of the scope for ts-directly, because TypeScript does not change how import paths are emitted by `tsc`.
@@ -53,3 +68,26 @@ OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 |   0 | load |     swcCompiler | 9.36 MiB |          0.00% |   355.13 ms |   3.75 ms |      0.00% |
 |   1 | load | esbuildCompiler | 8.98 MiB |         -4.09% |   398.08 ms |   9.14 ms |    +12.10% |
 |   2 | load |      tsCompiler | 9.38 MiB |         +0.18% | 5,028.82 ms | 126.26 ms |  +1316.07% |
+
+## CONTRIBUTING
+
+Download the latest version of this project, and build it:
+
+```shell
+git clone https://github.com/Kaciras/ts-directly.git
+cd ts-directly
+pnpm install
+pnpm run build
+```
+
+Then you can use the loader, or run tests:
+
+```shell
+pnpm run test
+```
+
+Run a benchmark (files inside `benchmark/`):
+
+```shell
+pnpm exec esbench --file <filename.ts>
+```
