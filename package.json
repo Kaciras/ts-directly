@@ -1,7 +1,7 @@
 {
 	"name": "ts-directly",
 	"version": "1.0.3",
-	"description": "Let Node execute TypeScript files directly, support SWC, esbuild, and tsc compilers",
+	"description": "Let Node execute TypeScript files directly with the compiler you installed, support SWC, esbuild, and tsc compilers",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"repository": {
@@ -36,9 +36,9 @@
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^3.0.3",
 		"@kaciras/eslint-config-typescript": "^3.0.3",
-		"@types/node": "^20.14.0",
+		"@types/node": "^20.14.2",
 		"@types/tar-fs": "^2.0.4",
-		"esbench": "^0.3.0",
+		"esbench": "^0.3.2",
 		"eslint": "^9.4.0",
 		"tar-fs": "^3.0.6"
 	},

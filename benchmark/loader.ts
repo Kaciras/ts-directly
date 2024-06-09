@@ -73,16 +73,13 @@ const fileSizeProfiler: Profiler = {
 
 // Run benchmark: pnpm exec esbench --file loader.ts
 export default defineSuite({
+	profilers: [fileSizeProfiler],
 	params: {
 		compiler: compilers,
 	},
 	baseline: {
 		type: "compiler",
 		value: compilers[0],
-	},
-	profilers: [fileSizeProfiler],
-	timing: {
-		iterations: 1,
 	},
 	async setup(scene) {
 		selectedCompiler = await scene.params.compiler();
