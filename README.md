@@ -2,9 +2,9 @@
 
 [![NPM Version](https://img.shields.io/npm/v/ts-directly?style=flat-square)](https://www.npmjs.com/package/ts-directly)
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)](https://github.com/Kaciras/ts-directly/actions/workflows/test.yml
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)](https://github.com/Kaciras/ts-directly/actions/workflows/test.yml)
 
-Let Node execute TypeScript files directly with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
+Let Node run TypeScript files with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
