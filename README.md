@@ -1,19 +1,19 @@
 # TS Directly
 
-![NPM Version](https://img.shields.io/npm/v/ts-directly?style=flat-square)
+[![NPM Version](https://img.shields.io/npm/v/ts-directly?style=flat-square)](https://www.npmjs.com/package/ts-directly)
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)](https://github.com/Kaciras/ts-directly/actions/workflows/test.yml
 
 Let Node execute TypeScript files directly with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
-* Automatic detects installed compilers, support [SWC](https://swc.rs/), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
+* Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on `tsconfig.json`.
 * Support transform `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
 ## Usage
 
-Since ts-directly does not include a compiler, you need to install one of the `@swc/core`, `esbuild`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly comes out of the box.
+Since ts-directly does not include a compiler, you need to install one of the `@swc/core`, `esbuild`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
 
 ```shell
 pnpm add ts-directly
@@ -86,7 +86,7 @@ Then you can use the loader, or run tests:
 pnpm run test
 ```
 
-Run a benchmark (files inside `benchmark/`):
+Run a benchmark (files in `benchmark/`):
 
 ```shell
 pnpm exec esbench --file <filename.ts>
