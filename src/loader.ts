@@ -17,8 +17,6 @@ export type CompileFn = (code: string, filename: string, isESM: boolean) => Prom
 
 export const tsconfigCache = new TSConfckCache<any>();
 
-const node_modules = sep + "node_modules";
-
 async function getTSConfig(file: string) {
 	const { tsconfig } = await parse(file, { cache: tsconfigCache });
 	if (tsconfig) {
@@ -146,6 +144,7 @@ async function tsCompiler(): Promise<CompileFn> {
 	};
 }
 
+// Fast compiler first, benchmarks are in benchmark/loader.ts
 export const compilers = [swcCompiler, esbuildCompiler, tsCompiler];
 
 let compile: CompileFn;
@@ -167,6 +166,8 @@ export async function detectTypeScriptCompiler() {
 
 // make `load` 15.47% faster
 export const typeCache = new Map<string, ModuleFormat>();
+
+const node_modules = sep + "node_modules";
 
 function cacheAndReturn(dir: string, type: ModuleFormat) {
 	typeCache.set(dir, type);
@@ -260,9 +261,8 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 			format = getPackageType(filename);
 	}
 
-	if (!compile) {
-		compile = await detectTypeScriptCompiler();
-	}
+	compile ??= await detectTypeScriptCompiler();
+
 	return {
 		shortCircuit: true,
 		format,
