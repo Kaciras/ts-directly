@@ -1,4 +1,4 @@
-import { stdout } from "process";
+import { join, sep } from "path";
 
-// `as const` makes it invalid for JS.
-stdout.write("Hello World" as const);
+// `as` makes it invalid for JS.
+export default join("Hello", "World").replace(sep, " ") as "Hello, World";

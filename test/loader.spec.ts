@@ -1,35 +1,25 @@
 import { describe, it } from "node:test";
 import assert from "assert";
-import { argv0 } from "process";
-import { exec } from "child_process";
-import { promisify } from "util";
 import { compilers, load } from "../src/loader.ts";
 
-const execAsync = promisify(exec);
-const node = JSON.stringify(argv0);
-
-function runFixture(name: string) {
-	return execAsync(`${node} --import ./lib/register.js test/fixtures/${name}`);
-}
-
 const entries = [
-	"attribute.ts",
-	"data-url.ts",
-	"ts-file.ts",
-	"ts-file.js",
-	"ts-file.cjs",
-	"ts-file.mjs",
+	"./fixtures/attribute.ts",
+	"data:text/javascript,const o = { ts: 'Hello World' }; export default o.ts",
+	"./fixtures/ts-file.ts",
+	"./fixtures/ts-file.js",
+	"./fixtures/ts-file.cjs",
+	"./fixtures/ts-file.mjs",
 ];
 
 for (const entry of entries) {
 	it(`should load: ${entry}`, async () => {
-		const { stdout } = await runFixture(entry);
-		assert.strictEqual(stdout, "Hello World");
+		const module = await import(entry);
+		assert.strictEqual(module.default, "Hello World");
 	});
 }
 
 it("currently cannot intercept require with non-exist file", () => {
-	return assert.rejects(runFixture("require2.cts"));
+	return assert.rejects(import("./fixtures/require-ne.ts"));
 });
 
 it("should fail when no compiler installed", async () => {

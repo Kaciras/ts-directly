@@ -1,3 +1,1 @@
-const { stdout } = require("process");
-
-stdout.write(require("./nested.cts").default);
+module.exports = require("./nested.cts").default;
