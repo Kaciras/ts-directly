@@ -1,0 +1,8 @@
+{
+	"ts-directly": "FOO_BAR",
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+	}
+}

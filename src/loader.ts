@@ -6,33 +6,13 @@ import { dirname, join, sep } from "path";
 import { readFileSync } from "fs";
 import { parse, TSConfckCache } from "tsconfck";
 
-/**
- * Compile the module from TypeScript to JavaScript.
- *
- * @param code TypeScript code to compile.
- * @param filename The filename associated with the code currently being compiled
- * @param isESM true if the file is ESM, false if is CJS.
- */
-export type CompileFn = (code: string, filename: string, isESM: boolean) => Promise<string>;
-
-export const tsconfigCache = new TSConfckCache<any>();
-
-async function getTSConfig(file: string) {
-	const { tsconfig } = await parse(file, { cache: tsconfigCache });
-	if (tsconfig) {
-		const options = tsconfig.compilerOptions ??= {};
-		options.target &&= options.target.toLowerCase();
-		options.module &&= options.module.toLowerCase();
-		return tsconfig;
-	}
-	throw new Error(`Cannot find tsconfig.json for ${file}`);
-}
+export type CompileFn = (code: string, filename: string, isESM: boolean, tsconfig: any) => Promise<string>;
 
 async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
 
-	return async (code, filename, isESM) => {
-		const { compilerOptions } = await getTSConfig(filename);
+	return async (code, filename, isESM, tsconfig) => {
+		const { compilerOptions } = tsconfig;
 		const {
 			target = "es2022", module = "esnext",
 			experimentalDecorators, emitDecoratorMetadata, useDefineForClassFields,
@@ -90,8 +70,7 @@ async function swcCompiler(): Promise<CompileFn> {
 async function esbuildCompiler(): Promise<CompileFn> {
 	const esbuild = await import("esbuild");
 
-	return async (code, sourcefile, isESM) => {
-		const tsconfigRaw = await getTSConfig(sourcefile);
+	return async (code, sourcefile, isESM, tsconfigRaw) => {
 		const { target, module } = tsconfigRaw.compilerOptions;
 
 		const options: TransformOptions = {
@@ -116,11 +95,10 @@ async function esbuildCompiler(): Promise<CompileFn> {
 	};
 }
 
-async function tsCompiler(): Promise<CompileFn> {
+async function tscCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
 
-	return async (code, fileName, isESM) => {
-		const tsconfig = await getTSConfig(fileName);
+	return async (code, fileName, isESM, tsconfig) => {
 		const compilerOptions = {
 			...tsconfig.compilerOptions,
 			removeComments: true,
@@ -144,15 +122,30 @@ async function tsCompiler(): Promise<CompileFn> {
 	};
 }
 
-// Fast compiler first, benchmarks are in benchmark/loader.ts
-export const compilers = [swcCompiler, esbuildCompiler, tsCompiler];
-
-let compile: CompileFn;
+export const tsconfigCache = new TSConfckCache<any>();
 
 /**
- * Import a supported TypeScript compiler, try the ones listed in
- * `compilers` in order, and throw an exception if none of them are installed.
+ * Parse the closest tsconfig.json file, with `target` & `module` lowercased.
+ *
+ * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
+ * @see https://github.com/dominikg/tsconfck
  */
+export async function getTSConfig(file: string) {
+	const parsed = await parse(file, { cache: tsconfigCache });
+	if (parsed.tsconfig) {
+		const options = parsed.tsconfig.compilerOptions ??= {};
+		options.target &&= options.target.toLowerCase();
+		options.module &&= options.module.toLowerCase();
+		return parsed;
+	}
+	throw new Error(`Cannot find tsconfig.json for ${file}`);
+}
+
+// Fast compiler first, benchmarks are in benchmark/loader.ts
+export const compilers = [swcCompiler, esbuildCompiler, tscCompiler];
+
+const compilerNames = ["swc", "esbuild", "tsc"];
+
 export async function detectTypeScriptCompiler() {
 	for (const create of compilers) {
 		try {
@@ -161,7 +154,36 @@ export async function detectTypeScriptCompiler() {
 			if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
 		}
 	}
-	throw new Error("No TypeScript transformer found");
+	throw new Error("No TypeScript compiler found");
+}
+
+/**
+ * Compile the module from TypeScript to JavaScript with supported compiler.
+ *
+ * Compile options is read from closest `tsconfig.json`.
+ *
+ * @param code TypeScript code to compile.
+ * @param filename The filename associated with the code currently being compiled
+ * @param isESM true if the file is ESM, false if is CJS.
+ */
+export async function compile(code: string, filename: string, isESM: boolean) {
+	const parsed = await getTSConfig(filename);
+	let transform: CompileFn;
+
+	let name: string | undefined;
+	for (const c of parsed.extended ?? [parsed]) {
+		name = c.tsconfig["ts-directly"];
+		if (name !== undefined) break;
+	}
+
+	if (name) {
+		const i = compilerNames.indexOf(name);
+		transform = await compilers[i]();
+	} else {
+		transform = await detectTypeScriptCompiler();
+	}
+
+	return transform(code, filename, isESM, parsed.tsconfig);
 }
 
 // make `load` 15.47% faster
@@ -249,6 +271,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 	const filename = fileURLToPath(url);
 
 	// Detect module type by extension and package.json
+	// https://github.com/nodejs/node/blob/5a19a9bd2616280d4a1a71da653cdf5f1ab57fde/lib/internal/modules/esm/get_format.js#L92
 	let format: ModuleFormat;
 	switch (match[0].charCodeAt(1)) {
 		case 99: /* c */
@@ -260,8 +283,6 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		default: /* t */
 			format = getPackageType(filename);
 	}
-
-	compile ??= await detectTypeScriptCompiler();
 
 	return {
 		shortCircuit: true,

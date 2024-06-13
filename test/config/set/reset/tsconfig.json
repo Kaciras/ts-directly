@@ -1,0 +1,8 @@
+{
+	"ts-directly": null,
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+	}
+}
