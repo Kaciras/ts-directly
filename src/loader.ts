@@ -122,7 +122,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 	};
 }
 
-async function tsCompiler(): Promise<CompileFn> {
+async function tscCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
 
 	return async (code, fileName, isESM) => {
@@ -151,7 +151,7 @@ async function tsCompiler(): Promise<CompileFn> {
 }
 
 // Fast compiler first, benchmarks are in benchmark/loader.ts
-export const compilers = [swcCompiler, esbuildCompiler, tsCompiler];
+export const compilers = [swcCompiler, esbuildCompiler, tscCompiler];
 
 let compile: CompileFn;
 
