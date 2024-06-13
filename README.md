@@ -9,7 +9,8 @@ Let Node run TypeScript files with the compiler you installed. Using [ESM Loader
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on `tsconfig.json`.
-* Support transform `.cts` and `.mts` files, as well as `module: "ESNext"`.
+* Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
+* Support fallback `*.js` imports to `*.ts` files.
 
 ## Usage
 
@@ -56,6 +57,14 @@ const jsCode = await compile(tsCode, file, isESM);
 Resolving alias is outside of the scope for ts-directly, because TypeScript does not change how import paths are emitted by `tsc`.
 
 Also, directory import and omitting file extension are not supported.
+
+## Configuration
+
+You can specify the compiler by set `TS_COMPILER` environment variable, possible values: `swc`, `esbuild` and `tsc`.
+
+```shell
+TS_COMPILER=tsc && node --import ts-directly/register main.ts
+```
 
 ## Performance
 
