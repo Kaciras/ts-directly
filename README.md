@@ -7,14 +7,14 @@
 Let Node run TypeScript files with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
 
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
-* Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
+* Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on `tsconfig.json`.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 * Support fallback `*.js` imports to `*.ts` files.
 
 ## Usage
 
-Since ts-directly does not include a compiler, you need to install one of the `@swc/core`, `esbuild`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
+Since ts-directly does not include a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
 
 ```shell
 pnpm add ts-directly
@@ -60,7 +60,7 @@ Also, directory import and omitting file extension are not supported.
 
 ## Configuration
 
-You can specify the compiler by set `TS_COMPILER` environment variable, possible values: `swc`, `esbuild` and `tsc`.
+You can specify the compiler by set `TS_COMPILER` environment variable, possible values: `swc`, `esbuild`, `sucrase` and `tsc`.
 
 ```shell
 TS_COMPILER=tsc && node --import ts-directly/register main.ts
@@ -68,15 +68,16 @@ TS_COMPILER=tsc && node --import ts-directly/register main.ts
 
 ## Performance
 
-Transform 1468 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
+Transform 1322 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
 
 OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
-| No. | Name |        compiler | filesize | filesize.ratio |        time |   time.SD | time.ratio |
-|----:|-----:|----------------:|---------:|---------------:|------------:|----------:|-----------:|
-|   0 | load |     swcCompiler | 9.36 MiB |          0.00% |   355.13 ms |   3.75 ms |      0.00% |
-|   1 | load | esbuildCompiler | 8.98 MiB |         -4.09% |   398.08 ms |   9.14 ms |    +12.10% |
-|   2 | load |      tsCompiler | 9.38 MiB |         +0.18% | 5,028.82 ms | 126.26 ms |  +1316.07% |
+| No. |        compiler |        time |  time.SD | time.ratio | filesize | filesize.ratio |
+|----:|----------------:|------------:|---------:|-----------:|---------:|---------------:|
+|   0 |     swcCompiler |   324.87 ms |  3.44 ms |      0.00% | 8.67 MiB |          0.00% |
+|   1 | esbuildCompiler |   382.57 ms |  3.41 ms |    +17.76% | 8.33 MiB |         -3.94% |
+|   2 | sucraseCompiler |   436.99 ms |  4.54 ms |    +34.51% | 8.96 MiB |         +3.35% |
+|   3 |     tscCompiler | 4,498.32 ms | 34.30 ms |  +1284.64% | 8.75 MiB |         +0.92% |
 
 ## CONTRIBUTING
 

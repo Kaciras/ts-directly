@@ -98,6 +98,7 @@ describe("config", () => {
 
 for (const create of compilers) {
 	describe(create.name, async () => {
+		const isSucrase = create.name.startsWith("sucrase");
 		const compile = await create();
 
 		await it("should generate JS & source map", async () => {
@@ -127,21 +128,19 @@ for (const create of compilers) {
 			assert.match(js, /} from "react\/jsx-runtime";/);
 		});
 
-		if (!create.name.startsWith("sucrase"))
-			await it("should remove comments", async () => {
-				const ts = `\
+		isSucrase || await it("should remove comments", async () => {
+			const ts = `\
 				/* Block comment */
 				// Line comment
 				/** Document comment */
 				export default () => {};
 			`;
-				const js = await compile(ts, "module.ts", true);
-				assert.doesNotMatch(js, /\/[*/][* ]/);
-			});
+			const js = await compile(ts, "module.ts", true);
+			assert.doesNotMatch(js, /\/[*/][* ]/);
+		});
 
-		if (!create.name.startsWith("sucrase"))
-			await it("should transform class fields", async () => {
-				const ts = `\
+		isSucrase || await it("should transform class fields", async () => {
+			const ts = `\
 				class CleverBase {
 					get p() {}
 					set p(_) {}
@@ -150,21 +149,20 @@ for (const create of compilers) {
 					p = "just a value";
 				}
 			`;
-				const js = await compile(ts, "test/ignores/module.ts", true);
-				assert.match(js, /Object\.defineProperty/);
-			});
+			const js = await compile(ts, "test/ignores/module.ts", true);
+			assert.match(js, /Object\.defineProperty/);
+		});
 
-		if (!create.name.startsWith("sucrase"))
-			await it("should transform decorators", async () => {
-				const ts = `\
+		isSucrase || await it("should transform decorators", async () => {
+			const ts = `\
 				function addFoo(clazz: any) {
 					clazz.foo = 11;
 				}
 				@addFoo class TestClass {}
 			`;
-				const js = await compile(ts, "test/decorators/module.ts", true);
+			const js = await compile(ts, "test/decorators/module.ts", true);
 
-				assert.strictEqual(eval(js).foo, 11);
-			});
+			assert.strictEqual(eval(js).foo, 11);
+		});
 	});
 }

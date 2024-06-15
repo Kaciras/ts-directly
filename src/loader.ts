@@ -39,14 +39,14 @@ async function sucraseCompiler(): Promise<CompileFn> {
 	const { transform } = await import("sucrase");
 
 	return async (input, filePath, isESM) => {
-		const { compilerOptions } = await getTSConfig(filePath);
+		const { compilerOptions: opts } = await getTSConfig(filePath);
 		const transforms: SucraseTransform[] = ["typescript"];
 
 		if (filePath.endsWith("x")) {
 			transforms.push("jsx");
 		}
 
-		switch (compilerOptions.module) {
+		switch (opts.module) {
 			case "nodenext":
 			case "node16":
 				if (!isESM)
@@ -59,22 +59,19 @@ async function sucraseCompiler(): Promise<CompileFn> {
 		const { code, sourceMap } = transform(input, {
 			filePath,
 			transforms,
-			keepUnusedImports: compilerOptions.verbatimModuleSyntax,
+			keepUnusedImports: opts.verbatimModuleSyntax,
 			sourceMapOptions: { compiledFilename: filePath },
 			preserveDynamicImport: true,
 			disableESTransforms: true,
 			injectCreateRequireForImportRequire: true,
-			enableLegacyTypeScriptModuleInterop: !compilerOptions.esModuleInterop,
+			enableLegacyTypeScriptModuleInterop: !opts.esModuleInterop,
 
-			jsxRuntime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
-			production: compilerOptions.jsx !== "react-jsxdev",
-			jsxPragma: compilerOptions.jsxFactory,
-			jsxFragmentPragma: compilerOptions.jsxFragmentFactory,
-			jsxImportSource: compilerOptions.jsxImportSource ?? "react",
+			jsxRuntime: opts.jsx?.startsWith("react-") ? "automatic" : "classic",
+			production: opts.jsx !== "react-jsxdev",
+			jsxImportSource: opts.jsxImportSource,
+			jsxPragma: opts.jsxFactory,
+			jsxFragmentPragma: opts.jsxFragmentFactory,
 		});
-
-		sourceMap!.sourceRoot = "";
-		sourceMap!.sources = [filePath];
 
 		const base64 = Buffer.from(JSON.stringify(sourceMap)).toString("base64");
 		return `${code}\n//# sourceMappingURL=data:application/json;base64,${base64}`;
@@ -85,16 +82,16 @@ async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
 
 	return async (code, filename, isESM) => {
-		const { compilerOptions } = await getTSConfig(filename);
+		const { compilerOptions: opts } = await getTSConfig(filename);
 		const {
 			target = "es2022", module = "esnext",
 			experimentalDecorators, emitDecoratorMetadata, useDefineForClassFields,
-		} = compilerOptions;
+		} = opts;
 
 		const options: SwcOptions = {
 			filename,
 			module: {
-				importInterop: compilerOptions.esModuleInterop ? "swc" : "none",
+				importInterop: opts.esModuleInterop ? "swc" : "none",
 				type: "es6",
 			},
 			sourceMaps: "inline",
@@ -102,7 +99,7 @@ async function swcCompiler(): Promise<CompileFn> {
 			swcrc: false,
 			jsc: {
 				target: target === "esnext" ? "es2022" : target,
-				externalHelpers: compilerOptions.importHelpers,
+				externalHelpers: opts.importHelpers,
 				minify: {
 					compress: false,
 					mangle: false,
@@ -121,10 +118,10 @@ async function swcCompiler(): Promise<CompileFn> {
 		};
 
 		options.jsc!.transform!.react = {
-			runtime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
-			pragma: compilerOptions.jsxFactory,
-			pragmaFrag: compilerOptions.jsxFragmentFactory,
-			importSource: compilerOptions.jsxImportSource ?? "react",
+			runtime: opts.jsx?.startsWith("react-") ? "automatic" : "classic",
+			pragma: opts.jsxFactory,
+			pragmaFrag: opts.jsxFragmentFactory,
+			importSource: opts.jsxImportSource ?? "react",
 		};
 
 		switch (module) {
