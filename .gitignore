@@ -21,5 +21,5 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-/storybook-*
+/bench-data
 !/test/node_modules

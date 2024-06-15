@@ -1,5 +1,5 @@
 import { existsSync, globSync, readFileSync } from "fs";
-import { dirname, join } from "path";
+import { join } from "path";
 import { pathToFileURL } from "url";
 import { createGunzip } from "zlib";
 import { Readable } from "stream";
@@ -12,11 +12,9 @@ import { CompileFn, compilers, load, resolve, tsconfigCache, typeCache } from ".
  * Originally used TypeScript's repository, but it doesn't compile with SWC.
  * https://github.com/swc-project/swc/issues/7899
  */
-const ASSET_VERSION = "8.1.1";
-const ASSET_URL = `https://github.com/storybookjs/storybook/archive/refs/tags/v${ASSET_VERSION}.tar.gz`;
+const ASSET_URL = "https://github.com/storybookjs/storybook/archive/refs/tags/v8.1.1.tar.gz";
 
-const root = dirname(import.meta.dirname);
-const dataDir = join(root, `storybook-${ASSET_VERSION}`);
+const dataDir = join(import.meta.dirname, "../bench-data");
 
 if (!existsSync(dataDir)) {
 	console.info("Downloading & extracting benchmark data...");
@@ -31,7 +29,7 @@ if (!existsSync(dataDir)) {
 
 	const extracting = Readable.fromWeb(body as any)
 		.pipe(createGunzip())
-		.pipe(tar.extract(root, { filter }));
+		.pipe(tar.extract(dataDir, { filter, strip: 1 }));
 
 	await once(extracting, "finish");
 }
