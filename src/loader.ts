@@ -1,5 +1,6 @@
 import type { Options as SwcOptions } from "@swc/core";
 import type { TransformOptions } from "esbuild";
+import type { Transform as SucraseTransform } from "sucrase";
 import { LoadHook, ModuleFormat, ResolveHook } from "module";
 import { fileURLToPath } from "url";
 import { dirname, join, sep } from "path";
@@ -32,6 +33,52 @@ async function getTSConfig(file: string) {
 		return tsconfig;
 	}
 	throw new Error(`Cannot find tsconfig.json for ${file}`);
+}
+
+async function sucraseCompiler(): Promise<CompileFn> {
+	const sucrase = await import("sucrase");
+
+	return async (input, filePath, isESM) => {
+		const { compilerOptions } = await getTSConfig(filePath);
+		const transforms: SucraseTransform[] = ["typescript"];
+
+		if (filePath.endsWith("x")) {
+			transforms.push("jsx");
+		}
+
+		switch (compilerOptions.module) {
+			case "nodenext":
+			case "node16":
+				if (!isESM)
+					transforms.push("imports");
+				break;
+			case "commonjs":
+				transforms.push("imports");
+		}
+
+		const { code, sourceMap } = sucrase.transform(input, {
+			filePath,
+			transforms,
+			keepUnusedImports: compilerOptions.verbatimModuleSyntax,
+			sourceMapOptions: { compiledFilename: filePath },
+			preserveDynamicImport: true,
+			disableESTransforms: true,
+			injectCreateRequireForImportRequire: true,
+			enableLegacyTypeScriptModuleInterop: !compilerOptions.esModuleInterop,
+
+			jsxRuntime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
+			production: true,
+			jsxPragma: compilerOptions.jsxFactory,
+			jsxFragmentPragma: compilerOptions.jsxFragmentFactory,
+			jsxImportSource: compilerOptions.jsxImportSource ?? "react",
+		});
+
+		sourceMap!.sourceRoot = "";
+		sourceMap!.sources = [filePath];
+
+		const base64 = Buffer.from(JSON.stringify(sourceMap)).toString("base64");
+		return `${code}\n//# sourceMappingURL=data:application/json;base64,${base64}`;
+	};
 }
 
 async function swcCompiler(): Promise<CompileFn> {
@@ -151,7 +198,7 @@ async function tscCompiler(): Promise<CompileFn> {
 }
 
 // Fast compiler first, benchmarks are in benchmark/loader.ts
-export const compilers = [swcCompiler, esbuildCompiler, tscCompiler];
+export const compilers = [sucraseCompiler, swcCompiler, esbuildCompiler, tscCompiler];
 
 let compile: CompileFn;
 

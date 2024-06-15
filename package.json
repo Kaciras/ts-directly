@@ -43,11 +43,15 @@
 		"tar-fs": "^3.0.6"
 	},
 	"peerDependencies": {
+		"sucrase": "^3.35.0",
 		"@swc/core": "^1.5.5",
 		"esbuild": "^0.21.1",
 		"typescript": "^5.4.5"
 	},
 	"peerDependenciesMeta": {
+		"sucrase": {
+			"optional": true
+		},
 		"esbuild": {
 			"optional": true
 		},

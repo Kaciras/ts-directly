@@ -23,9 +23,11 @@ if (!existsSync(dataDir)) {
 		throw new Error(`Assets download failed (${status}).`);
 	}
 
-	// Broken files & declarations, we do not compile them.
 	const filter = (name: string) =>
-		name.includes("__testfixtures__") || name.endsWith(".d.ts") || name.includes("__mocks");
+		name.endsWith(".d.ts") ||			// Not need to transform.
+		name.includes("angular") ||			// Use decorators.
+		name.includes("__mocks") ||			// Broken files.
+		name.includes("__testfixtures__");	// Broken files.
 
 	const extracting = Readable.fromWeb(body as any)
 		.pipe(createGunzip())

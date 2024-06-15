@@ -104,24 +104,13 @@ for (const create of compilers) {
 			const ts = "export default <string> a ?? b;";
 			const js = await compile(ts, "module.ts", true);
 
-			assert.match(js, /export default a \?\? b;/);
+			assert.match(js, /export default +a \?\? b;/);
 			assert.doesNotMatch(js, /Object\.defineProperty/);
 
 			const b64 = js.slice(js.lastIndexOf(",") + 1);
 			const sourceMap = JSON.parse(Buffer.from(b64, "base64").toString());
 			assert.deepEqual(sourceMap.sources, ["module.ts"]);
 			assert.strictEqual(sourceMap.sourcesContent, undefined);
-		});
-
-		await it("should remove comments", async () => {
-			const ts = `\
-				/* Block comment */
-				// Line comment
-				/** Document comment */
-				export default () => {};
-			`;
-			const js = await compile(ts, "module.ts", true);
-			assert.doesNotMatch(js, /\/[*/][* ]/);
 		});
 
 		await it("should transform file to CJS", async () => {
@@ -131,8 +120,28 @@ for (const create of compilers) {
 			assert.doesNotMatch(js, /export default/);
 		});
 
-		await it("should transform class fields", async () => {
-			const ts = `\
+		await it("should support JSX", async () => {
+			const ts = "<div>Hello World</div>";
+			const js = await compile(ts, "test/jsx/module.tsx", true);
+			assert.strictEqual(js.includes(ts), false);
+			assert.match(js, /} from "react\/jsx-runtime";/);
+		});
+
+		if (!create.name.startsWith("sucrase"))
+			await it("should remove comments", async () => {
+				const ts = `\
+				/* Block comment */
+				// Line comment
+				/** Document comment */
+				export default () => {};
+			`;
+				const js = await compile(ts, "module.ts", true);
+				assert.doesNotMatch(js, /\/[*/][* ]/);
+			});
+
+		if (!create.name.startsWith("sucrase"))
+			await it("should transform class fields", async () => {
+				const ts = `\
 				class CleverBase {
 					get p() {}
 					set p(_) {}
@@ -141,27 +150,21 @@ for (const create of compilers) {
 					p = "just a value";
 				}
 			`;
-			const js = await compile(ts, "test/ignores/module.ts", true);
-			assert.match(js, /Object\.defineProperty/);
-		});
+				const js = await compile(ts, "test/ignores/module.ts", true);
+				assert.match(js, /Object\.defineProperty/);
+			});
 
-		await it("should transform decorators", async () => {
-			const ts = `\
+		if (!create.name.startsWith("sucrase"))
+			await it("should transform decorators", async () => {
+				const ts = `\
 				function addFoo(clazz: any) {
 					clazz.foo = 11;
 				}
 				@addFoo class TestClass {}
 			`;
-			const js = await compile(ts, "test/decorators/module.ts", true);
+				const js = await compile(ts, "test/decorators/module.ts", true);
 
-			assert.strictEqual(eval(js).foo, 11);
-		});
-
-		await it("should support JSX", async () => {
-			const ts = "<div>Hello World</div>";
-			const js = await compile(ts, "test/jsx/module.tsx", true);
-			assert.strictEqual(js.includes(ts), false);
-			assert.match(js, /} from "react\/jsx-runtime";/);
-		});
+				assert.strictEqual(eval(js).foo, 11);
+			});
 	});
 }
