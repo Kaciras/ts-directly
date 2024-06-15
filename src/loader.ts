@@ -36,7 +36,7 @@ async function getTSConfig(file: string) {
 }
 
 async function sucraseCompiler(): Promise<CompileFn> {
-	const sucrase = await import("sucrase");
+	const { transform } = await import("sucrase");
 
 	return async (input, filePath, isESM) => {
 		const { compilerOptions } = await getTSConfig(filePath);
@@ -56,7 +56,7 @@ async function sucraseCompiler(): Promise<CompileFn> {
 				transforms.push("imports");
 		}
 
-		const { code, sourceMap } = sucrase.transform(input, {
+		const { code, sourceMap } = transform(input, {
 			filePath,
 			transforms,
 			keepUnusedImports: compilerOptions.verbatimModuleSyntax,
@@ -67,7 +67,7 @@ async function sucraseCompiler(): Promise<CompileFn> {
 			enableLegacyTypeScriptModuleInterop: !compilerOptions.esModuleInterop,
 
 			jsxRuntime: compilerOptions.jsx?.startsWith("react-") ? "automatic" : "classic",
-			production: true,
+			production: compilerOptions.jsx !== "react-jsxdev",
 			jsxPragma: compilerOptions.jsxFactory,
 			jsxFragmentPragma: compilerOptions.jsxFragmentFactory,
 			jsxImportSource: compilerOptions.jsxImportSource ?? "react",
@@ -198,7 +198,7 @@ async function tscCompiler(): Promise<CompileFn> {
 }
 
 // Fast compiler first, benchmarks are in benchmark/loader.ts
-export const compilers = [sucraseCompiler, swcCompiler, esbuildCompiler, tscCompiler];
+export const compilers = [swcCompiler, esbuildCompiler, sucraseCompiler, tscCompiler];
 
 let compile: CompileFn;
 
@@ -209,7 +209,7 @@ let compile: CompileFn;
 export async function detectTypeScriptCompiler() {
 	const name = process.env.TS_COMPILER;
 	if (name) {
-		const i = ["swc", "esbuild", "tsc"].indexOf(name);
+		const i = ["swc", "esbuild", "sucrase", "tsc"].indexOf(name);
 		return compilers[i]();
 	}
 	for (const create of compilers) {
