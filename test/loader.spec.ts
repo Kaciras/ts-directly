@@ -103,7 +103,11 @@ for (const create of compilers) {
 
 		await it("should generate JS & source map", async () => {
 			const ts = "export default <string> a ?? b;";
-			const js = await compile(ts, "module.ts", true);
+			const js = await compile(ts, "module.ts", {
+				target: "esnext",
+				module: "esnext",
+				inlineSourceMap: true,
+			});
 
 			assert.match(js, /export default +a \?\? b;/);
 			assert.doesNotMatch(js, /Object\.defineProperty/);
@@ -116,14 +120,21 @@ for (const create of compilers) {
 
 		await it("should transform file to CJS", async () => {
 			const ts = "export default <string> a ?? b;";
-			const js = await compile(ts, "module.cts", false);
+			const js = await compile(ts, "module.cts", {
+				target: "esnext",
+				module: "commonjs",
+			});
 
 			assert.doesNotMatch(js, /export default/);
 		});
 
 		await it("should support JSX", async () => {
 			const ts = "<div>Hello World</div>";
-			const js = await compile(ts, "test/jsx/module.tsx", true);
+			const js = await compile(ts, "test/jsx/module.tsx", {
+				target: "esnext",
+				module: "esnext",
+				jsx: "react-jsx",
+			});
 			assert.strictEqual(js.includes(ts), false);
 			assert.match(js, /} from "react\/jsx-runtime";/);
 		});
@@ -135,7 +146,11 @@ for (const create of compilers) {
 				/** Document comment */
 				export default () => {};
 			`;
-			const js = await compile(ts, "module.ts", true);
+			const js = await compile(ts, "module.ts", {
+				target: "esnext",
+				module: "esnext",
+				removeComments: true,
+			});
 			assert.doesNotMatch(js, /\/[*/][* ]/);
 		});
 
@@ -149,7 +164,12 @@ for (const create of compilers) {
 					p = "just a value";
 				}
 			`;
-			const js = await compile(ts, "test/ignores/module.ts", true);
+			const js = await compile(ts, "test/ignores/module.ts",{
+				target: "es2017",
+				module: "esnext",
+				experimentalDecorators: true,
+				useDefineForClassFields: true,
+			});
 			assert.match(js, /Object\.defineProperty/);
 		});
 
@@ -160,7 +180,12 @@ for (const create of compilers) {
 				}
 				@addFoo class TestClass {}
 			`;
-			const js = await compile(ts, "test/decorators/module.ts", true);
+			const js = await compile(ts, "test/decorators/module.ts", {
+				target: "esnext",
+				module: "esnext",
+				experimentalDecorators: true,
+				emitDecoratorMetadata: true,
+			});
 
 			assert.strictEqual(eval(js).foo, 11);
 		});

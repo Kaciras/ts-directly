@@ -41,16 +41,15 @@ await import("./file/import/ts/modules.ts");
 Use the API:
 
 ```javascript
-import { detectTypeScriptCompiler } from "ts-directly";
 import { readFileSync, writeFileSync } from "fs";
-
-const compile = await detectTypeScriptCompiler();
+import { transform } from "ts-directly";
 
 const file = "module.ts";
-const isESM = true;
 const tsCode = readFileSync(file, "utf8");
 
-const jsCode = await compile(tsCode, file, isESM);
+const { source, format } = await transform(tsCode, file);
+// source: JS code.
+// format: "module" for ESM, "commonjs" for CJS.
 ```
 
 ## No Alias Support

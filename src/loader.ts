@@ -1,25 +1,28 @@
 import type { Options as SwcOptions } from "@swc/core";
 import type { TransformOptions } from "esbuild";
 import type { Transform as SucraseTransform } from "sucrase";
-import { LoadHook, ModuleFormat, ResolveHook } from "module";
+import { LoadHook, ResolveHook } from "module";
 import { fileURLToPath } from "url";
 import { dirname, join, sep } from "path";
 import { readFileSync } from "fs";
 import { parse, TSConfckCache } from "tsconfck";
 
 /**
- * Compile the module from TypeScript to JavaScript.
+ * Compile the code from TypeScript to JavaScript.
  *
  * @param code TypeScript code to compile.
  * @param filename The filename associated with the code currently being compiled
- * @param isESM true if the file is ESM, false if is CJS.
+ * @param options The `compilerOptions` property of `tsconfig.json`
  */
-export type CompileFn = (code: string, filename: string, isESM: boolean) => Promise<string>;
+export type CompileFn = (code: string, filename: string, options: any) => Promise<string> | string;
 
 export const tsconfigCache = new TSConfckCache<any>();
 
 /**
- * Parse the closest tsconfig.json file, with `target` & `module` lowercased.
+ * Parse the closest tsconfig.json, and normalize some compiler options:
+ * - Lowercase `module` & `target`.
+ * - Set `removeComments` & `inlineSourceMap` to true.
+ * - Remove property `outDir`.
  *
  * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
  * @see https://github.com/dominikg/tsconfck
@@ -28,6 +31,12 @@ async function getTSConfig(file: string) {
 	const { tsconfig } = await parse(file, { cache: tsconfigCache });
 	if (tsconfig) {
 		const options = tsconfig.compilerOptions ??= {};
+		options.inlineSourceMap = true;
+		options.removeComments = true;
+
+		// Avoid modify source path in the source map.
+		delete options.outDir;
+
 		options.target &&= options.target.toLowerCase();
 		options.module &&= options.module.toLowerCase();
 		return tsconfig;
@@ -38,22 +47,14 @@ async function getTSConfig(file: string) {
 async function sucraseCompiler(): Promise<CompileFn> {
 	const { transform } = await import("sucrase");
 
-	return async (input, filePath, isESM) => {
-		const { compilerOptions: opts } = await getTSConfig(filePath);
+	return (input, filePath, opts) => {
 		const transforms: SucraseTransform[] = ["typescript"];
 
 		if (filePath.endsWith("x")) {
 			transforms.push("jsx");
 		}
-
-		switch (opts.module) {
-			case "nodenext":
-			case "node16":
-				if (!isESM)
-					transforms.push("imports");
-				break;
-			case "commonjs":
-				transforms.push("imports");
+		if (opts.module === "commonjs") {
+			transforms.push("imports");
 		}
 
 		const { code, sourceMap } = transform(input, {
@@ -81,11 +82,10 @@ async function sucraseCompiler(): Promise<CompileFn> {
 async function swcCompiler(): Promise<CompileFn> {
 	const swc = await import("@swc/core");
 
-	return async (code, filename, isESM) => {
-		const { compilerOptions: opts } = await getTSConfig(filename);
+	return async (code, filename, opts) => {
 		const {
 			target = "es2022", module = "esnext",
-			experimentalDecorators, emitDecoratorMetadata, useDefineForClassFields,
+			experimentalDecorators, useDefineForClassFields,
 		} = opts;
 
 		const options: SwcOptions = {
@@ -112,7 +112,7 @@ async function swcCompiler(): Promise<CompileFn> {
 				transform: {
 					useDefineForClassFields,
 					legacyDecorator: experimentalDecorators,
-					decoratorMetadata: emitDecoratorMetadata,
+					decoratorMetadata: opts.emitDecoratorMetadata,
 				},
 			},
 		};
@@ -124,13 +124,8 @@ async function swcCompiler(): Promise<CompileFn> {
 			importSource: opts.jsxImportSource ?? "react",
 		};
 
-		switch (module) {
-			case "nodenext":
-			case "node16":
-				options.module!.type = isESM ? "es6" : "commonjs";
-				break;
-			case "commonjs":
-				options.module!.type = "commonjs";
+		if (module === "commonjs") {
+			options.module!.type = "commonjs";
 		}
 
 		return (await swc.transform(code, options)).code;
@@ -140,26 +135,20 @@ async function swcCompiler(): Promise<CompileFn> {
 async function esbuildCompiler(): Promise<CompileFn> {
 	const esbuild = await import("esbuild");
 
-	return async (code, sourcefile, isESM) => {
-		const tsconfigRaw = await getTSConfig(sourcefile);
-		const { target, module } = tsconfigRaw.compilerOptions;
+	return async (code, sourcefile, compilerOptions) => {
+		const { target, module } = compilerOptions;
 
 		const options: TransformOptions = {
 			sourcefile,
-			tsconfigRaw,
+			tsconfigRaw: { compilerOptions },
 			target,
 			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
 			sourcemap: "inline",
 			sourcesContent: false,
 		};
 
-		switch (module) {
-			case "nodenext":
-			case "node16":
-				isESM || (options.format = "cjs");
-				break;
-			case "commonjs":
-				options.format = "cjs";
+		if (module === "commonjs") {
+			options.format = "cjs";
 		}
 
 		return (await esbuild.transform(code, options)).code;
@@ -169,44 +158,24 @@ async function esbuildCompiler(): Promise<CompileFn> {
 async function tscCompiler(): Promise<CompileFn> {
 	const { default: ts } = await import("typescript");
 
-	return async (code, fileName, isESM) => {
-		const tsconfig = await getTSConfig(fileName);
-		const compilerOptions = {
-			...tsconfig.compilerOptions,
-			removeComments: true,
-			inlineSourceMap: true,
-		};
-
-		// Avoid modify source path in the source map.
-		delete compilerOptions.outDir;
-
-		/*
-		 * "Node16" & "NodeNext" do not work with transpileModule().
-		 * https://github.com/microsoft/TypeScript/issues/53022
-		 */
-		switch (compilerOptions.module) {
-			case "node16":
-			case "nodenext":
-				compilerOptions.module = isESM ? "ESNext" : "CommonJS";
-		}
-
-		return ts.transpileModule(code, { fileName, compilerOptions }).outputText;
+	return (code, fileName, compilerOptions) => {
+		const opts = { fileName, compilerOptions };
+		return ts.transpileModule(code, opts).outputText;
 	};
 }
 
 // Fast compiler first, benchmarks are in benchmark/loader.ts
 export const compilers = [swcCompiler, esbuildCompiler, sucraseCompiler, tscCompiler];
-
-let compile: CompileFn;
+const compilerNames = ["swc", "esbuild", "sucrase", "tsc"];
 
 /**
- * Import a supported TypeScript compiler, try the ones listed in
- * `compilers` in order, and throw an exception if none of them are installed.
+ * Import a supported TypeScript compiler,
+ * or throw an exception if none of them are installed.
  */
 export async function detectTypeScriptCompiler() {
 	const name = process.env.TS_COMPILER;
 	if (name) {
-		const i = ["swc", "esbuild", "sucrase", "tsc"].indexOf(name);
+		const i = compilerNames.indexOf(name);
 		return compilers[i]();
 	}
 	for (const create of compilers) {
@@ -219,14 +188,37 @@ export async function detectTypeScriptCompiler() {
 	throw new Error("No TypeScript compiler found");
 }
 
+type ScriptType = "commonjs" | "module";
+
 // make `load` 15.47% faster
-export const typeCache = new Map<string, ModuleFormat>();
+export const typeCache = new Map<string, ScriptType>();
 
 const node_modules = sep + "node_modules";
 
-function cacheAndReturn(dir: string, type: ModuleFormat) {
+function cacheAndReturn(dir: string, type: ScriptType) {
 	typeCache.set(dir, type);
 	return type;
+}
+
+/**
+ * Detect module type (module or commonjs) by extension and package.json
+ *
+ * @param filename File path of the module, must have JS or TS extension.
+ * @see https://github.com/nodejs/node/blob/5a19a9bd2616280d4a1a71da653cdf5f1ab57fde/lib/internal/modules/esm/get_format.js#L92
+ */
+function detectModuleType(filename: string) {
+	const i = filename.lastIndexOf(".") + 1;
+	if (i === 0) {
+		throw new Error(`${filename} is not a module`);
+	}
+	switch (filename.charCodeAt(i)) {
+		case 99: /* c */
+			return "commonjs";
+		case 109: /* m */
+			return "module";
+		default: /* t */
+			return getPackageType(filename);
+	}
 }
 
 /**
@@ -237,7 +229,7 @@ function cacheAndReturn(dir: string, type: ModuleFormat) {
  *
  * https://nodejs.org/docs/latest/api/packages.html#type
  */
-function getPackageType(filename: string): ModuleFormat {
+function getPackageType(filename: string): ScriptType {
 	const dir = dirname(filename);
 
 	const cached = typeCache.get(dir);
@@ -256,6 +248,51 @@ function getPackageType(filename: string): ModuleFormat {
 	} else {
 		return cacheAndReturn(dir, getPackageType(dir));
 	}
+}
+
+let importedCompileFn: CompileFn;
+
+/**
+ * Transform the module from TypeScript to JavaScript using a supported compiler,
+ * the compiler options is read from closest tsconfig.json.
+ *
+ * @param code TypeScript code to compile.
+ * @param filename The filename must have a valid JS or TS extension.
+ * @param format Specify the output format, if omitted it is determined automatically.
+ * @return JS source and format, and additional properties to satisfy `load` hooks.
+ */
+export async function transform(code: string, filename: string, format?: ScriptType) {
+	importedCompileFn ??= await detectTypeScriptCompiler();
+
+	const tsconfig = await getTSConfig(filename);
+	const compilerOptions = { ...tsconfig.compilerOptions };
+
+	if (format === "module") {
+		const { module = "" } = compilerOptions;
+		if (!module.startsWith("es")) {
+			compilerOptions.module = "esnext";
+		}
+	} else if (format === "commonjs") {
+		compilerOptions.module = "commonjs";
+	} else {
+		format = detectModuleType(filename);
+	}
+
+	/*
+	 * "Node16" & "NodeNext" do not work with transpileModule().
+	 * https://github.com/microsoft/TypeScript/issues/53022
+	 */
+	switch (compilerOptions.module) {
+		case "node16":
+		case "nodenext":
+			compilerOptions.module = format === "module" ? "esnext" : "commonjs";
+	}
+
+	return {
+		shortCircuit: true,
+		format,
+		source: await importedCompileFn(code, filename, compilerOptions),
+	};
 }
 
 /**
@@ -293,35 +330,13 @@ export const load: LoadHook = async (url, context, nextLoad) => {
 		return nextLoad(url, context);
 	}
 
-	const match = /\.[cm]?tsx?$/i.exec(url);
+	const match = /\.[cm]?tsx?$/i.test(url);
 	if (!match || !url.startsWith("file:")) {
 		return nextLoad(url, context);
 	}
 
 	context.format = "ts" as any;
 	const ts = await nextLoad(url, context);
-	const code = ts.source!.toString();
-	const filename = fileURLToPath(url);
 
-	// Detect module type by extension and package.json
-	// https://github.com/nodejs/node/blob/5a19a9bd2616280d4a1a71da653cdf5f1ab57fde/lib/internal/modules/esm/get_format.js#L92
-	let format: ModuleFormat;
-	switch (match[0].charCodeAt(1)) {
-		case 99: /* c */
-			format = "commonjs";
-			break;
-		case 109: /* m */
-			format = "module";
-			break;
-		default: /* t */
-			format = getPackageType(filename);
-	}
-
-	compile ??= await detectTypeScriptCompiler();
-
-	return {
-		shortCircuit: true,
-		format,
-		source: await compile(code, filename, format === "module"),
-	};
+	return transform(ts.source!.toString(), fileURLToPath(url));
 };
