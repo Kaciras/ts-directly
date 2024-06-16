@@ -134,7 +134,7 @@ async function tscCompiler(): Promise<CompileFn> {
 // Fast compiler first, benchmarks are in benchmark/loader.ts
 export const compilers = [swcCompiler, esbuildCompiler, sucraseCompiler, tscCompiler];
 
-const compilerNames = ["swc", "esbuild", "sucrase", "tsc"];
+export const names = ["swc", "esbuild", "sucrase", "tsc"];
 
 /**
  * Import a supported TypeScript compiler,
@@ -143,8 +143,7 @@ const compilerNames = ["swc", "esbuild", "sucrase", "tsc"];
 export async function detectTypeScriptCompiler() {
 	const name = process.env.TS_COMPILER;
 	if (name) {
-		const i = compilerNames.indexOf(name);
-		return compilers[i]();
+		return compilers[names.indexOf(name)]();
 	}
 	for (const create of compilers) {
 		try {

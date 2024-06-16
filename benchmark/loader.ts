@@ -6,7 +6,7 @@ import { Readable } from "stream";
 import { once } from "events";
 import { defineSuite, Profiler } from "esbench";
 import * as tar from "tar-fs";
-import { CompileFn, compilers } from "../src/compiler.ts";
+import { CompileFn, compilers, names } from "../src/compiler.ts";
 import { load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
 
 /**
@@ -53,11 +53,9 @@ function nextLoad(url: string) {
 
 const ctx = {} as any;
 
-async function doImport(file: string) {
+async function emulateImport(file: string) {
 	return load((await resolve(file, ctx, nextResolve)).url, ctx, nextLoad);
 }
-
-let selectedCompiler: CompileFn;
 
 const fileSizeProfiler: Profiler = {
 	onStart: ctx => ctx.defineMetric({
@@ -72,24 +70,29 @@ const fileSizeProfiler: Profiler = {
 	},
 };
 
+// Bypass compiler instance cache.
+const actualCompilers = [...compilers];
+let selectedCompiler: CompileFn;
+compilers[0] = async () => (...args) => selectedCompiler(...args);
+
 // Run benchmark: pnpm exec esbench --file loader.ts
 export default defineSuite({
 	profilers: [fileSizeProfiler],
 	params: {
-		compiler: compilers,
+		compiler: names,
 	},
 	baseline: {
 		type: "compiler",
-		value: compilers[0],
+		value: names[0],
 	},
 	async setup(scene) {
-		selectedCompiler = await scene.params.compiler();
-		compilers[0] = async () => (...args) => selectedCompiler(...args);
+		const index = names.indexOf(scene.params.compiler);
+		selectedCompiler = await actualCompilers[index]();
 
 		scene.benchAsync("load", () => {
 			tsconfigCache.clear();
 			typeCache.clear();
-			return Promise.all(urls.map(doImport));
+			return Promise.all(urls.map(emulateImport));
 		});
 	},
 });
