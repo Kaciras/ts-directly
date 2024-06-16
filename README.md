@@ -29,9 +29,10 @@ node --import ts-directly/register main.ts
 Or register in code:
 
 ```javascript
-import { register } from "module";
+import module from "module";
 
-register("ts-directly", import.meta.url);
+// Use nullable check for compatibility with runtimes other than Node.
+module.register?.("ts-directly", import.meta.url);
 
 // TS files can be imported after registration.
 await import("./file/import/ts/modules.ts");
