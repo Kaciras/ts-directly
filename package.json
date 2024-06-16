@@ -1,7 +1,7 @@
 {
 	"name": "ts-directly",
-	"version": "1.1.0",
-	"description": "Let Node execute TypeScript files directly with the compiler you installed, support SWC, esbuild, and tsc",
+	"version": "2.0.0",
+	"description": "Let Node execute TypeScript files directly with the compiler you installed, support SWC, esbuild, sucrase, tsc",
 	"license": "MIT",
 	"author": "Kaciras <Kaciras@outlook.com>",
 	"repository": {
@@ -24,7 +24,8 @@
 		"./register": "./lib/register.js"
 	},
 	"files": [
-		"lib/*.{js,d.ts}"
+		"lib/*.js",
+		"lib/loader.d.ts"
 	],
 	"scripts": {
 		"build": "tsc",
