@@ -6,7 +6,7 @@
 
 Let Node run TS files or add to your library to give it the ability to execute TypeScript.
 
-* Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
+* Tiny: [4 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on `tsconfig.json`.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
@@ -14,7 +14,7 @@ Let Node run TS files or add to your library to give it the ability to execute T
 
 Different with builder:
 
-* After transpile the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
+* ts-directly use [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) that is more efficient than builder. After transpiling the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
 
 ## Usage
 
@@ -51,7 +51,7 @@ declare function transform(code: string, filename: string, format?: ScriptType):
 Transform the module from TypeScript to JavaScript using a supported compiler, the compiler options is read from closest tsconfig.json.
 
 * `code`: TypeScript code to compile.
-* `filename`: The filename must have a valid JS or TS extension.
+* `filename`: The filename, must have a valid JS or TS extension.
 * `format`: Specify the output format `commonjs` or `module`, if omitted it is determined automatically.
 
 Returns a promise of object with properties:
