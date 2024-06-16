@@ -4,7 +4,7 @@
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)](https://github.com/Kaciras/ts-directly/actions/workflows/test.yml)
 
-Let Node run TypeScript files with the compiler you installed. Using [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks).
+Let Node run TS files or add to your library to give it the ability to execute TypeScript.
 
 * Tiny: 2.8 KB + 1 dependency (4.7 KB) gzipped.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
@@ -12,9 +12,13 @@ Let Node run TypeScript files with the compiler you installed. Using [ESM Loader
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 * Support fallback `*.js` imports to `*.ts` files.
 
+Different with builder:
+
+* After transpile the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
+
 ## Usage
 
-Since ts-directly does not include a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
+Since ts-directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
 
 ```shell
 pnpm add ts-directly
@@ -40,6 +44,22 @@ await import("./file/import/ts/modules.ts");
 
 Use the API:
 
+```typescript
+declare function transform(code: string, filename: string, format?: ScriptType): Promise<LoadFnOutput>;
+```
+
+Transform the module from TypeScript to JavaScript using a supported compiler, the compiler options is read from closest tsconfig.json.
+
+* `code`: TypeScript code to compile.
+* `filename`: The filename must have a valid JS or TS extension.
+* `format`: Specify the output format `commonjs` or `module`, if omitted it is determined automatically.
+
+Returns a promise of object with properties:
+
+* `format`: `module` if the file is ESM, `commonjs` for CJS.
+* `source`: The JS code.
+* `shortCircuit`: always `true`, make the object satisfies `LoadFnOutput`
+
 ```javascript
 import { readFileSync, writeFileSync } from "fs";
 import { transform } from "ts-directly";
@@ -48,8 +68,6 @@ const file = "module.ts";
 const tsCode = readFileSync(file, "utf8");
 
 const { source, format } = await transform(tsCode, file);
-// source: JS code.
-// format: "module" for ESM, "commonjs" for CJS.
 ```
 
 ## No Alias Support
