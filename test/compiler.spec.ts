@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, it, Mock, mock } from "node:test";
 import assert from "assert";
-import { CompileFn, compilers, detectTypeScriptCompiler } from "../src/compiler.ts";
+import { compilers, detectTypeScriptCompiler } from "../src/compiler.ts";
 
 describe("detectTypeScriptCompiler", () => {
-	const mockCompiler = () => (() => "") as CompileFn;
+	const mockCompiler = () => Promise.resolve(() => "");
 	const backup = [...compilers];
 
 	beforeEach(() => {
@@ -67,13 +67,22 @@ for (const create of compilers) describe(create.name, async () => {
 		assert.strictEqual(sourceMap.sourcesContent, undefined);
 	});
 
+	await it("should accept legacy ES version", async () => {
+		const ts = "export default <string> a ?? b;";
+		const js = await compile(ts, "module.ts", {
+			module: "es6",
+			target: "es2015",
+		});
+		assert.doesNotMatch(js, /string/);
+		assert.match(js, /export default /); // Downlevel is optional.
+	});
+
 	await it("should transform file to CJS", async () => {
 		const ts = "export default <string> a ?? b;";
 		const js = await compile(ts, "module.cts", {
 			target: "esnext",
 			module: "commonjs",
 		});
-
 		assert.doesNotMatch(js, /export default/);
 	});
 

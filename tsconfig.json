@@ -10,7 +10,8 @@
 		"declaration": true,
 		"removeComments": true,
 		"resolveJsonModule": true,
+		"allowJs": true,
 		"skipLibCheck": true,
-		"useUnknownInCatchVariables": false,
+		"useUnknownInCatchVariables": false
 	}
 }
