@@ -6,7 +6,8 @@ import { Readable } from "stream";
 import { once } from "events";
 import { defineSuite, Profiler } from "esbench";
 import * as tar from "tar-fs";
-import { CompileFn, compilers, load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
+import { CompileFn, compilers } from "../src/compiler.ts";
+import { load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
 
 /**
  * Originally used TypeScript's repository, but it doesn't compile with SWC.
