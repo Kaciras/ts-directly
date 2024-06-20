@@ -123,6 +123,7 @@ async function esbuildCompiler(): Promise<CompileFn> {
 }
 
 async function tscCompiler(): Promise<CompileFn> {
+	// TODO: TS 5.5 has fixed the ugly import.
 	const { default: ts } = await import("typescript");
 
 	return (code, fileName, compilerOptions) => {
