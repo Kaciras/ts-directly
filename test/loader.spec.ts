@@ -57,6 +57,8 @@ describe("transform", () => {
 	const mockCompile = mock.fn<CompileFn>(() => "baz");
 	compilers[0] = () => Promise.resolve(mockCompile);
 
+	delete process.env.TS_COMPILER;
+
 	afterEach(() => mockCompile.mock.resetCalls());
 
 	it("should return value satisfies LoadFnOutput", async () => {
