@@ -1,4 +1,4 @@
-# TS Directly
+# TS-Directly
 
 [![NPM Version](https://img.shields.io/npm/v/ts-directly?style=flat-square)](https://www.npmjs.com/package/ts-directly)
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
@@ -14,11 +14,19 @@ Let Node run TS files or add to your library to give it the ability to execute T
 
 Different with builder:
 
-* ts-directly use [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) that is more efficient than builder. After transpiling the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
+* TS-Directly use [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) that is more efficient than builder. After transpiling the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
+
+Why not:
+
+* [ts-node](https://github.com/TypeStrong/ts-node) doesn't work when your package type is "module".
+* [tsx](https://github.com/privatenumber/tsx) bundles `esbuild`, while TS-Directly supports several compilers - it's more friendly to projects that don't use `esbuild`.
 
 ## Usage
 
-Since ts-directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases where projects using TypeScript have `typescript` installed, ts-directly works out-of-box.
+Since TS-Directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. But in the vast majority of cases TS-Directly works out-of-box:
+
+* Projects using TypeScript usually have `typescript` installed.
+* Compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used by TS-Directly.
 
 ```shell
 pnpm add ts-directly
@@ -72,7 +80,7 @@ const { source, format } = await transform(tsCode, file);
 
 ## No Alias Support
 
-Resolving alias is outside of the scope for ts-directly, because TypeScript does not change how import paths are emitted by `tsc`.
+Resolving alias is outside of the scope for TS-Directly, because TypeScript does not change how import paths are emitted by `tsc`.
 
 Also, directory import and omitting file extension are not supported.
 
@@ -90,12 +98,12 @@ Transform 1322 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-di
 
 OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
-| No. |        compiler |        time |  time.SD | time.ratio | filesize | filesize.ratio |
-|----:|----------------:|------------:|---------:|-----------:|---------:|---------------:|
-|   0 |     swcCompiler |   324.87 ms |  3.44 ms |      0.00% | 8.67 MiB |          0.00% |
-|   1 | esbuildCompiler |   382.57 ms |  3.41 ms |    +17.76% | 8.33 MiB |         -3.94% |
-|   2 | sucraseCompiler |   436.99 ms |  4.54 ms |    +34.51% | 8.96 MiB |         +3.35% |
-|   3 |     tscCompiler | 4,498.32 ms | 34.30 ms |  +1284.64% | 8.75 MiB |         +0.92% |
+| No. | compiler |        time |  time.SD | time.ratio | filesize | filesize.ratio |
+|----:|---------:|------------:|---------:|-----------:|---------:|---------------:|
+|   0 |      swc |   324.87 ms |  3.44 ms |      0.00% | 8.67 MiB |          0.00% |
+|   1 |  esbuild |   382.57 ms |  3.41 ms |    +17.76% | 8.33 MiB |         -3.94% |
+|   2 |  sucrase |   436.99 ms |  4.54 ms |    +34.51% | 8.96 MiB |         +3.35% |
+|   3 |      tsc | 4,498.32 ms | 34.30 ms |  +1284.64% | 8.75 MiB |         +0.92% |
 
 ## CONTRIBUTING
 
