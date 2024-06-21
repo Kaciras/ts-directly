@@ -23,7 +23,7 @@ Why not:
 
 ## Usage
 
-Since TS-Directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. But in the vast majority of cases TS-Directly works out-of-box:
+Since TS-Directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases TS-Directly works out-of-box:
 
 * Projects using TypeScript usually have `typescript` installed.
 * Compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used by TS-Directly.
@@ -100,10 +100,10 @@ OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
 | No. | compiler |        time |  time.SD | time.ratio | filesize | filesize.ratio |
 |----:|---------:|------------:|---------:|-----------:|---------:|---------------:|
-|   0 |      swc |   324.87 ms |  3.44 ms |      0.00% | 8.67 MiB |          0.00% |
-|   1 |  esbuild |   382.57 ms |  3.41 ms |    +17.76% | 8.33 MiB |         -3.94% |
-|   2 |  sucrase |   436.99 ms |  4.54 ms |    +34.51% | 8.96 MiB |         +3.35% |
-|   3 |      tsc | 4,498.32 ms | 34.30 ms |  +1284.64% | 8.75 MiB |         +0.92% |
+|   0 |      swc |   299.56 ms |  3.12 ms |      0.00% | 8.67 MiB |          0.00% |
+|   1 |  esbuild |   379.90 ms |  9.17 ms |    +26.82% | 8.33 MiB |         -3.94% |
+|   2 |  sucrase |   455.83 ms |  5.47 ms |    +52.17% | 8.93 MiB |         +3.04% |
+|   3 |      tsc | 2,847.94 ms | 65.22 ms |   +850.71% | 8.74 MiB |         +0.80% |
 
 ## CONTRIBUTING
 
@@ -122,8 +122,8 @@ Then you can use the loader, or run tests:
 pnpm run test
 ```
 
-Run a benchmark (files in `benchmark/`):
+Run benchmark (files in `benchmark/`):
 
 ```shell
-pnpm exec esbench --file <filename.ts>
+pnpm exec esbench --file loader.ts
 ```

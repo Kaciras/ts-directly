@@ -1,4 +1,2 @@
-import { join, sep } from "path";
-
 // `as` makes it invalid for JS.
-export default join("Hello", "World").replace(sep, " ") as "Hello, World";
+export default (import.meta.dirname + "Hello World").slice(-11) as "Hello, World";

@@ -1,47 +1,14 @@
-import { existsSync, globSync, readFileSync } from "fs";
-import { join } from "path";
-import { pathToFileURL } from "url";
-import { createGunzip } from "zlib";
-import { Readable } from "stream";
-import { once } from "events";
+import { readFileSync } from "fs";
 import { defineSuite, Profiler } from "esbench";
-import * as tar from "tar-fs";
-import { CompileFn, compilers, names } from "../src/compiler.ts";
+import { names } from "../src/compiler.ts";
 import { load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
+import { getFilesToTransform, setCompiler } from "./helper.ts";
 
-/**
- * Originally used TypeScript's repository, but it doesn't compile with SWC.
- * https://github.com/swc-project/swc/issues/7899
- */
-const ASSET_URL = "https://github.com/storybookjs/storybook/archive/refs/tags/v8.1.1.tar.gz";
-
-const dataDir = join(import.meta.dirname, "../bench-data");
-
-if (!existsSync(dataDir)) {
-	console.info("Downloading & extracting benchmark data...");
-	const { body, ok, status } = await fetch(ASSET_URL);
-	if (!ok) {
-		throw new Error(`Assets download failed (${status}).`);
-	}
-
-	const filter = (name: string) =>
-		name.endsWith(".d.ts") ||			// Not need to transform.
-		name.includes("angular") ||			// Use decorators.
-		name.includes("__mocks") ||			// Broken files.
-		name.includes("__testfixtures__");	// Broken files.
-
-	const extracting = Readable.fromWeb(body as any)
-		.pipe(createGunzip())
-		.pipe(tar.extract(dataDir, { filter, strip: 1 }));
-
-	await once(extracting, "finish");
-}
-
-const urls = globSync("code/**/*.ts", { cwd: dataDir }) as string[];
+const urls = await getFilesToTransform();
 console.info(`Benchmark for import ${urls.length} files.`);
 
-function nextResolve(file: string) {
-	return { url: pathToFileURL(join(dataDir, file)).toString() };
+function nextResolve(url: string) {
+	return { url, importAttributes: {} };
 }
 
 function nextLoad(url: string) {
@@ -70,11 +37,6 @@ const fileSizeProfiler: Profiler = {
 	},
 };
 
-// Bypass compiler instance cache.
-const actualCompilers = [...compilers];
-let selectedCompiler: CompileFn;
-compilers[0] = async () => (...args) => selectedCompiler(...args);
-
 // Run benchmark: pnpm exec esbench --file loader.ts
 export default defineSuite({
 	profilers: [fileSizeProfiler],
@@ -86,8 +48,7 @@ export default defineSuite({
 		value: names[0],
 	},
 	async setup(scene) {
-		const index = names.indexOf(scene.params.compiler);
-		selectedCompiler = await actualCompilers[index]();
+		await setCompiler(scene.params.compiler);
 
 		scene.benchAsync("load", () => {
 			tsconfigCache.clear();
