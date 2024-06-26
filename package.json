@@ -39,15 +39,15 @@
 		"@kaciras/eslint-config-typescript": "^3.0.3",
 		"@types/node": "^20.14.7",
 		"@types/tar-fs": "^2.0.4",
-		"esbench": "^0.3.3",
+		"esbench": "^0.4.0",
 		"eslint": "^9.5.0",
 		"tar-fs": "^3.0.6"
 	},
 	"peerDependencies": {
-		"@swc/core": "^1.5.5",
-		"esbuild": "^0.21.1",
-		"sucrase": "^3.35.0",
-		"typescript": "^5.4.5"
+		"@swc/core": ">=1",
+		"esbuild": "*",
+		"sucrase": ">=3",
+		"typescript": ">=5"
 	},
 	"peerDependenciesMeta": {
 		"sucrase": {
