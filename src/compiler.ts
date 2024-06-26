@@ -3,7 +3,9 @@ import type { TransformOptions } from "esbuild";
 import type { Transform as SucraseTransform } from "sucrase";
 
 /**
- * Compile the code from TypeScript to JavaScript.
+ * Compile the code from TypeScript to JavaScript. The options is normalized:
+ * - Lowercase `module` & `target`.
+ * - If `module` is "node16" or "nodenext", it resolved to "commonjs" or "esnext".
  *
  * @param code TypeScript code to compile.
  * @param filename The filename associated with the code currently being compiled

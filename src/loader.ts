@@ -13,10 +13,7 @@ export const typeCache = new Map<string, ScriptType>();
 const node_modules = sep + "node_modules";
 
 /**
- * Parse the closest tsconfig.json, and normalize some compiler options:
- * - Lowercase `module` & `target`.
- * - Set `removeComments` & `inlineSourceMap` to true.
- * - Remove property `outDir`.
+ * Parse the closest tsconfig.json, and normalize some compiler options.
  *
  * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
  * @see https://github.com/dominikg/tsconfck

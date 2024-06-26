@@ -47,7 +47,7 @@ describe("detectTypeScriptCompiler", () => {
 });
 
 for (const create of compilers) describe(create.name, async () => {
-	const isSucrase = create.name.startsWith("sucrase");
+	const skipSucrase = { skip: create.name.startsWith("sucrase") };
 	const compile = await create();
 
 	await it("should generate JS & source map", async () => {
@@ -97,7 +97,7 @@ for (const create of compilers) describe(create.name, async () => {
 		assert.match(js, /} from "react\/jsx-runtime";/);
 	});
 
-	await it("should remove comments", { skip: isSucrase }, async () => {
+	await it("should remove comments", skipSucrase, async () => {
 		const ts = `\
 			/* Block comment */
 			// Line comment
@@ -112,7 +112,7 @@ for (const create of compilers) describe(create.name, async () => {
 		assert.doesNotMatch(js, /\/[*/][* ]/);
 	});
 
-	await it("should transform class fields", { skip: isSucrase }, async () => {
+	await it("should transform class fields", skipSucrase, async () => {
 		const ts = `\
 			class CleverBase {
 				get p() {}
@@ -128,10 +128,10 @@ for (const create of compilers) describe(create.name, async () => {
 			experimentalDecorators: true,
 			useDefineForClassFields: true,
 		});
-		assert.match(js, /Object\.defineProperty/);
+		assert.match(js, /Object\.defineProperty\(/);
 	});
 
-	await it("should transform decorators", { skip: isSucrase }, async () => {
+	await it("should transform decorators", skipSucrase, async () => {
 		const ts = `\
 			function addFoo(clazz: any) {
 				clazz.foo = 11;
