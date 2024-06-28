@@ -26,7 +26,7 @@ const entries = [
 ];
 
 if (platform !== "win32") {
-	entries.push(resolve("./fixtures/module.ts"));
+	entries.push(resolve("test/fixtures/module.js"));
 }
 
 for (const entry of entries) {
