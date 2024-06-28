@@ -1,6 +1,7 @@
 import { afterEach, describe, it, mock } from "node:test";
 import assert from "assert";
-import { argv0 } from "process";
+import { resolve } from "path";
+import { argv0, platform } from "process";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { CompileFn, compilers } from "../src/compiler.ts";
@@ -23,6 +24,10 @@ const entries = [
 	"./fixtures/module.cjs",
 	"./fixtures/module.mjs",
 ];
+
+if (platform !== "win32") {
+	entries.push(resolve("./fixtures/module.ts"));
+}
 
 for (const entry of entries) {
 	it(`should load: ${entry}`, async () => {

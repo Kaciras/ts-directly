@@ -148,7 +148,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 		return await nextResolve(specifier, context);
 	} catch (e) {
 		// Two regexps is faster than one, see benchmark/url-matching.ts
-		const isFile = /^(?:file:|\.{1,2}\/)/i.test(specifier);
+		const isFile = /^(?:file:|\.{0,2}\/)/i.test(specifier);
 		const isJSFile = isFile && /\.[cm]?jsx?$/i.test(specifier);
 
 		if (!isJSFile || e.code !== "ERR_MODULE_NOT_FOUND") {

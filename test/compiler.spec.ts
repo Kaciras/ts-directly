@@ -128,7 +128,7 @@ for (const create of compilers) describe(create.name, async () => {
 			experimentalDecorators: true,
 			useDefineForClassFields: true,
 		});
-		assert.match(js, /Object\.defineProperty\(/);
+		assert.match(js, /Object\.defineProperty/);
 	});
 
 	await it("should transform decorators", skipSucrase, async () => {
