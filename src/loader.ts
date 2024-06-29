@@ -23,22 +23,24 @@ async function getTSConfig(file: string) {
 		cache: tsconfigCache,
 	});
 	if (tsconfig) {
-		const options = tsconfig.compilerOptions ??= {};
-		const { paths, baseUrl = "" } = options;
-		tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
+		if (!tsconfig.root) {
+			const options = tsconfig.compilerOptions ??= {};
+			const { paths, baseUrl = "" } = options;
+			tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
 
-		options.inlineSourceMap = true;
-		options.removeComments = true;
+			options.inlineSourceMap = true;
+			options.removeComments = true;
 
-		// Avoid modify source path in the source map.
-		delete options.outDir;
+			// Avoid modify source path in the source map.
+			delete options.outDir;
 
-		if (paths) {
-			tsconfig.alias = PathAlias.parse(tsconfig, paths);
+			if (paths) {
+				tsconfig.alias = PathAlias.parse(tsconfig, paths);
+			}
+
+			options.target &&= options.target.toLowerCase();
+			options.module &&= options.module.toLowerCase();
 		}
-
-		options.target &&= options.target.toLowerCase();
-		options.module &&= options.module.toLowerCase();
 		return tsconfig;
 	}
 	throw new Error(`Cannot find tsconfig.json for ${file}`);
