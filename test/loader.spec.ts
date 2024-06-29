@@ -6,6 +6,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { CompileFn, compilers } from "../src/compiler.ts";
 import { transform } from "../src/loader.ts";
+import { pathToFileURL } from "url";
 
 // Top-Level test cases are use the loader registered in CLI, assume the compiler is working properly.
 
@@ -25,16 +26,15 @@ const entries = [
 	"./fixtures/module.mjs",
 ];
 
+// Absolute path, only test on Unix as Windows volume separator is illegal for import.
 if (platform !== "win32") {
 	entries.push(resolve("test/fixtures/module.js"));
 }
 
-for (const entry of entries) {
-	it(`should load: ${entry}`, async () => {
-		const module = await import(entry);
-		assert.strictEqual(module.default, "Hello World");
-	});
-}
+for (const entry of entries) it(`should load: ${entry}`, async () => {
+	const module = await import(entry);
+	assert.strictEqual(module.default, "Hello World");
+});
 
 it("should be able to import node module", async () => {
 	const { stdout } = await runFixture("./test/fixtures/import_pkg.ts");
@@ -56,6 +56,19 @@ it("should skip JS files", () => {
 // Check if the issues is fixed.
 it("currently cannot intercept require with non-exist file", () => {
 	return assert.rejects(import("./fixtures/require-ne.ts"));
+});
+
+const aliasImports = [
+	"prefix/module.ts",
+	"module.ts/suffix",
+	"exact-match",
+	"@app/module/index.ts",
+];
+
+for (const i of aliasImports) it(`should resolve alias: ${i}`, async () => {
+	const importer = pathToFileURL("test/alias/main.js").toString();
+	const module = import.meta.resolve(i, importer);
+	assert.strictEqual(module, pathToFileURL("test/fixtures/module.ts").toString());
 });
 
 describe("transform", () => {
@@ -93,7 +106,7 @@ describe("transform", () => {
 	it("should enforce module type to CJS", async () => {
 		const output = await transform("", "module.ts", "commonjs");
 
-		const [,, options] = mockCompile.mock.calls[0].arguments;
+		const [, , options] = mockCompile.mock.calls[0].arguments;
 		assert.strictEqual(output.format, "commonjs");
 		assert.strictEqual(options.module, "commonjs");
 	});
@@ -101,7 +114,7 @@ describe("transform", () => {
 	it("should enforce module type to ESM", async () => {
 		const output = await transform("", "test/commonjs/module.ts", "module");
 
-		const [,, options] = mockCompile.mock.calls[0].arguments;
+		const [, , options] = mockCompile.mock.calls[0].arguments;
 		assert.deepEqual(options, {
 			target: "esnext",
 			module: "esnext",
@@ -117,7 +130,7 @@ describe("transform", () => {
 	it("should allow legacy ES version for module format", async () => {
 		const output = await transform("", "test/es6/module.ts", "module");
 
-		const [,, options] = mockCompile.mock.calls[0].arguments;
+		const [, , options] = mockCompile.mock.calls[0].arguments;
 		assert.strictEqual(options.module, "es6");
 		assert.strictEqual(output.format, "module");
 	});

@@ -1,6 +1,6 @@
 import { LoadHook, ResolveHook } from "module";
-import { fileURLToPath } from "url";
-import { dirname, join, sep } from "path";
+import { fileURLToPath, pathToFileURL } from "url";
+import { dirname, join, resolve as resolvePath, sep } from "path";
 import { readFileSync } from "fs";
 import { parse, TSConfckCache } from "tsconfck";
 import { CompileFn, detectTypeScriptCompiler } from "./compiler.js";
@@ -19,8 +19,12 @@ const node_modules = sep + "node_modules";
  * @see https://github.com/dominikg/tsconfck
  */
 async function getTSConfig(file: string) {
-	const { tsconfig } = await parse(file, { cache: tsconfigCache });
+	const { tsconfig, tsconfigFile } = await parse(file, {
+		cache: tsconfigCache,
+	});
 	if (tsconfig) {
+		tsconfig.root = dirname(tsconfigFile);
+
 		const options = tsconfig.compilerOptions ??= {};
 		options.inlineSourceMap = true;
 		options.removeComments = true;
@@ -28,11 +32,65 @@ async function getTSConfig(file: string) {
 		// Avoid modify source path in the source map.
 		delete options.outDir;
 
+		if (options.paths) {
+			tsconfig.alias = parseAlias(tsconfig, options.paths);
+		}
+
 		options.target &&= options.target.toLowerCase();
 		options.module &&= options.module.toLowerCase();
 		return tsconfig;
 	}
 	throw new Error(`Cannot find tsconfig.json for ${file}`);
+}
+
+class PathAlias {
+
+	readonly baseDir: string;
+	readonly prefix: string;
+	readonly suffix?: string;
+	readonly templates: string[];
+
+	constructor(tsconfig: any, key: string, templates: string[]) {
+		const { baseDir = "." } = tsconfig.compilerOptions;
+		const parts = key.split("*");
+		this.templates = templates;
+		this.prefix = parts[0];
+		this.suffix = parts[1];
+		this.baseDir = resolvePath(tsconfig.root, baseDir);
+	}
+
+	test(specifier: string) {
+		const { prefix, suffix } = this;
+		if (suffix !== undefined) {
+			return specifier.startsWith(prefix) && specifier.endsWith(suffix);
+		}
+		return specifier === prefix;
+	}
+
+	getPaths(specifier: string) {
+		const { prefix, suffix, baseDir, templates } = this;
+		if (suffix === undefined) {
+			return templates.map(template => {
+				return join(baseDir, template);
+			});
+		}
+		const replacement = specifier.slice(
+			prefix.length,
+			specifier.length - suffix.length,
+		);
+		return templates.map(template => {
+			template = join(baseDir, template);
+			return template.replace("*", replacement);
+		});
+	}
+}
+
+function parseAlias(tsconfig: any, paths: Record<string, string[]>) {
+	const alias = [];
+	for (const [key, templates] of Object.entries(paths)) {
+		alias.push(new PathAlias(tsconfig, key, templates));
+	}
+	return alias.sort((a, b) => b.prefix.length - a.prefix.length);
 }
 
 function cacheAndReturn(dir: string, type: ScriptType) {
@@ -135,6 +193,30 @@ export async function transform(code: string, filename: string, format?: ScriptT
 	};
 }
 
+async function getAlias(id: string, parent?: string) {
+	if (/^\.{0,2}\//i.test(id)) {
+		return; // Alias are only work for bare specifier.
+	}
+	if (!parent) {
+		parent = "module.ts";
+	} else {
+		if (parent.includes("/node_modules/")) {
+			return;
+		}
+		if (!parent.startsWith("file:")) {
+			return;
+		}
+		parent = fileURLToPath(parent);
+	}
+	const tsconfig = await getTSConfig(parent);
+	const alias = tsconfig.alias as PathAlias[];
+	if (alias) {
+		return alias.find(item => item.test(id))?.getPaths(id);
+	}
+	const { baseDir } = tsconfig.compilerOptions ?? {};
+	return baseDir ? [resolvePath(baseDir, id)] : undefined;
+}
+
 /**
  * For a JS file, if it doesn't exist, then look for the corresponding TS source.
  *
@@ -144,6 +226,21 @@ export async function transform(code: string, filename: string, format?: ScriptT
  * TODO: Cannot intercept require() with non-exists files.
  */
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
+	const resolvedPaths = await getAlias(specifier, context.parentURL);
+	if (resolvedPaths) {
+		for (const newPath of resolvedPaths) {
+			const url = pathToFileURL(newPath).toString();
+			try {
+				return await doResolve(url, context, nextResolve);
+			} catch (e) {
+				if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
+			}
+		}
+	}
+	return doResolve(specifier, context, nextResolve);
+};
+
+export const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
