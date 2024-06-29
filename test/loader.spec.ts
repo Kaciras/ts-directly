@@ -4,9 +4,9 @@ import { resolve } from "path";
 import { argv0, platform } from "process";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { pathToFileURL } from "url";
 import { CompileFn, compilers } from "../src/compiler.ts";
 import { transform } from "../src/loader.ts";
-import { pathToFileURL } from "url";
 
 // Top-Level test cases are use the loader registered in CLI, assume the compiler is working properly.
 
@@ -58,17 +58,34 @@ it("currently cannot intercept require with non-exist file", () => {
 	return assert.rejects(import("./fixtures/require-ne.ts"));
 });
 
-const aliasImports = [
-	"prefix/module.ts",
-	"module.ts/suffix",
-	"exact-match",
-	"@app/module/index.ts",
-];
+describe("Path Alias", () => {
+	const moduleTsURL = pathToFileURL("test/fixtures/module.ts").toString();
+	const topImporter = pathToFileURL("test/alias/main.js").toString();
+	const subImporter = pathToFileURL("test/alias/nested/main.js").toString();
 
-for (const i of aliasImports) it(`should resolve alias: ${i}`, async () => {
-	const importer = pathToFileURL("test/alias/main.js").toString();
-	const module = import.meta.resolve(i, importer);
-	assert.strictEqual(module, pathToFileURL("test/fixtures/module.ts").toString());
+	const aliasImports = [
+		"prefix/module.ts",
+		"module.ts/suffix",
+		"exact-match",
+		"@app/module/index.ts",
+	];
+
+	for (const i of aliasImports) it(`should resolve: ${i}`, async () => {
+		assert.strictEqual(import.meta.resolve(i, topImporter), moduleTsURL);
+	});
+
+	it("should look at baseUrl", () => {
+		assert.strictEqual(import.meta.resolve("module.js", subImporter), moduleTsURL);
+	});
+
+	it("should fallback to the original", () => {
+		const url = pathToFileURL("test/node_modules/_pkg/foo.ts").toString();
+		assert.strictEqual(import.meta.resolve("_pkg", subImporter), url);
+	});
+
+	it("should not inherit alias options", () => {
+		assert.throws(() => import.meta.resolve("exact-match", subImporter));
+	});
 });
 
 describe("transform", () => {

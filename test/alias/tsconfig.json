@@ -4,10 +4,22 @@
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"paths": {
-			"exact-match": ["../fixtures/module.ts"],
-			"prefix/*": ["../fixtures/*"],
-			"*/suffix": ["../fixtures/*"],
-			"@app/*/index.ts": ["../fixtures/*.ts"]
+			"exact-*": [
+				"../fixtures/invalid.js"
+			],
+			"exact-match": [
+				"INVALID",
+				"../fixtures/module.ts"
+			],
+			"prefix/*": [
+				"../fixtures/*"
+			],
+			"*/suffix": [
+				"../fixtures/*"
+			],
+			"@app/*/index.ts": [
+				"../fixtures/*.ts"
+			]
 		}
 	}
 }

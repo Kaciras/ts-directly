@@ -45,18 +45,18 @@ async function getTSConfig(file: string) {
 
 class PathAlias {
 
-	readonly baseDir: string;
+	readonly baseUrl: string;
 	readonly prefix: string;
 	readonly suffix?: string;
 	readonly templates: string[];
 
 	constructor(tsconfig: any, key: string, templates: string[]) {
-		const { baseDir = "." } = tsconfig.compilerOptions;
+		const { baseUrl = "." } = tsconfig.compilerOptions;
 		const parts = key.split("*");
 		this.templates = templates;
 		this.prefix = parts[0];
 		this.suffix = parts[1];
-		this.baseDir = resolvePath(tsconfig.root, baseDir);
+		this.baseUrl = resolvePath(tsconfig.root, baseUrl);
 	}
 
 	test(specifier: string) {
@@ -68,10 +68,10 @@ class PathAlias {
 	}
 
 	getPaths(specifier: string) {
-		const { prefix, suffix, baseDir, templates } = this;
+		const { prefix, suffix, baseUrl, templates } = this;
 		if (suffix === undefined) {
 			return templates.map(template => {
-				return join(baseDir, template);
+				return join(baseUrl, template);
 			});
 		}
 		const replacement = specifier.slice(
@@ -79,7 +79,7 @@ class PathAlias {
 			specifier.length - suffix.length,
 		);
 		return templates.map(template => {
-			template = join(baseDir, template);
+			template = join(baseUrl, template);
 			return template.replace("*", replacement);
 		});
 	}
@@ -210,11 +210,12 @@ async function getAlias(id: string, parent?: string) {
 	}
 	const tsconfig = await getTSConfig(parent);
 	const alias = tsconfig.alias as PathAlias[];
-	if (alias) {
-		return alias.find(item => item.test(id))?.getPaths(id);
+	const match = alias?.find(item => item.test(id));
+	if (match) {
+		return match.getPaths(id);
 	}
-	const { baseDir } = tsconfig.compilerOptions ?? {};
-	return baseDir ? [resolvePath(baseDir, id)] : undefined;
+	const { baseUrl } = tsconfig.compilerOptions ?? {};
+	return baseUrl ? [resolvePath(baseUrl, id)] : undefined;
 }
 
 /**
