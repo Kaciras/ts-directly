@@ -58,6 +58,11 @@ it("currently cannot intercept require with non-exist file", () => {
 	return assert.rejects(import("./fixtures/require-ne.ts"));
 });
 
+it("should support require directory and omit extension", async () => {
+	const module = await import("./directory/main.ts");
+	assert.strictEqual(module.default, "Hello World");
+});
+
 describe("Path Alias", () => {
 	const moduleTsURL = pathToFileURL("test/fixtures/module.ts").toString();
 	const topImporter = pathToFileURL("test/alias/main.js").toString();
