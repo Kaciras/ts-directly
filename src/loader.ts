@@ -23,17 +23,18 @@ async function getTSConfig(file: string) {
 		cache: tsconfigCache,
 	});
 	if (tsconfig) {
-		tsconfig.root = dirname(tsconfigFile);
-
 		const options = tsconfig.compilerOptions ??= {};
+		const { paths, baseUrl = "" } = options;
+		tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
+
 		options.inlineSourceMap = true;
 		options.removeComments = true;
 
 		// Avoid modify source path in the source map.
 		delete options.outDir;
 
-		if (options.paths) {
-			tsconfig.alias = parseAlias(tsconfig, options.paths);
+		if (paths) {
+			tsconfig.alias = PathAlias.parse(tsconfig, paths);
 		}
 
 		options.target &&= options.target.toLowerCase();
@@ -45,52 +46,41 @@ async function getTSConfig(file: string) {
 
 class PathAlias {
 
-	readonly baseUrl: string;
+	readonly templates: string[];
 	readonly prefix: string;
 	readonly suffix?: string;
-	readonly templates: string[];
 
-	constructor(tsconfig: any, key: string, templates: string[]) {
-		const { baseUrl = "." } = tsconfig.compilerOptions;
+	constructor(root: string, key: string, templates: string[]) {
 		const parts = key.split("*");
-		this.templates = templates;
 		this.prefix = parts[0];
 		this.suffix = parts[1];
-		this.baseUrl = resolvePath(tsconfig.root, baseUrl);
+		this.templates = templates.map(p => join(root, p));
 	}
 
-	test(specifier: string) {
+	test(id: string) {
 		const { prefix, suffix } = this;
-		if (suffix !== undefined) {
-			return specifier.startsWith(prefix) && specifier.endsWith(suffix);
-		}
-		return specifier === prefix;
+		return suffix === undefined
+			? id === prefix
+			: id.startsWith(prefix) && id.endsWith(suffix);
 	}
 
-	getPaths(specifier: string) {
-		const { prefix, suffix, baseUrl, templates } = this;
+	getPaths(id: string) {
+		const { prefix, suffix, templates } = this;
 		if (suffix === undefined) {
-			return templates.map(template => {
-				return join(baseUrl, template);
-			});
+			return templates;
 		}
-		const replacement = specifier.slice(
-			prefix.length,
-			specifier.length - suffix.length,
-		);
-		return templates.map(template => {
-			template = join(baseUrl, template);
-			return template.replace("*", replacement);
-		});
+		const s = id.slice(prefix.length, id.length - suffix.length);
+		return templates.map(t => t.replace("*", s));
 	}
-}
 
-function parseAlias(tsconfig: any, paths: Record<string, string[]>) {
-	const alias = [];
-	for (const [key, templates] of Object.entries(paths)) {
-		alias.push(new PathAlias(tsconfig, key, templates));
+	static parse({ root }: any, paths: Record<string, string[]>) {
+		const alias: PathAlias[] = [];
+		for (const [key, templates] of Object.entries(paths)) {
+			alias.push(new PathAlias(root, key, templates));
+		}
+		// Pattern with the longer prefix before any * takes higher precedence.
+		return alias.sort((a, b) => b.prefix.length - a.prefix.length);
 	}
-	return alias.sort((a, b) => b.prefix.length - a.prefix.length);
 }
 
 function cacheAndReturn(dir: string, type: ScriptType) {
@@ -194,7 +184,7 @@ export async function transform(code: string, filename: string, format?: ScriptT
 }
 
 async function getAlias(id: string, parent?: string) {
-	if (/^\.{0,2}\//i.test(id)) {
+	if (/^\.{0,2}\//.test(id)) {
 		return; // Alias are only work for bare specifier.
 	}
 	if (!parent) {
