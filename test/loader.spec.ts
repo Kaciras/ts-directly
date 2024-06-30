@@ -1,5 +1,7 @@
 import { afterEach, describe, it, mock } from "node:test";
 import assert from "assert";
+import { tmpdir } from "os";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { argv0, platform } from "process";
 import { exec } from "child_process";
@@ -61,6 +63,21 @@ it("currently cannot intercept require with non-exist file", () => {
 it("should support require directory and omit extension", async () => {
 	const module = await import("./directory/main.ts");
 	assert.strictEqual(module.default, "Hello World");
+});
+
+it("should support resolve file without tsconfig.json", () => {
+	const root = mkdtempSync(tmpdir() + "/test-");
+	const pkg = root + "/node_modules/pkg";
+	const parent = pathToFileURL(root + "/main.js").toString();
+	try {
+		mkdirSync(pkg, { recursive: true });
+		writeFileSync(pkg + "/index.js", "");
+
+		const url = import.meta.resolve("pkg/index.js", parent);
+		assert(url.endsWith("/node_modules/pkg/index.js"));
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
 });
 
 describe("Path Alias", () => {

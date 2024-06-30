@@ -7,13 +7,19 @@ import { CompileFn, detectTypeScriptCompiler } from "./compiler.js";
 
 type ScriptType = "commonjs" | "module";
 
+interface TSConfigEssential {
+	root: string;
+	alias?: PathAlias[];
+	compilerOptions: any;
+}
+
 export const tsconfigCache = new TSConfckCache<any>();
 export const typeCache = new Map<string, ScriptType>();
 
 const node_modules = sep + "node_modules";
 
 /**
- * Parse the closest tsconfig.json, and normalize some compiler options.
+ * Parse the closest tsconfig.json, and normalize some options.
  *
  * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
  * @see https://github.com/dominikg/tsconfck
@@ -22,34 +28,38 @@ async function getTSConfig(file: string) {
 	const { tsconfig, tsconfigFile } = await parse(file, {
 		cache: tsconfigCache,
 	});
-	if (tsconfig) {
-		if (!tsconfig.root) {
-			const options = tsconfig.compilerOptions ??= {};
-			const { paths, baseUrl = "" } = options;
-			tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
-
-			options.inlineSourceMap = true;
-			options.removeComments = true;
-
-			// Avoid modify source path in the source map.
-			delete options.outDir;
-
-			if (paths) {
-				tsconfig.alias = PathAlias.parse(tsconfig, paths);
-			}
-
-			options.target &&= options.target.toLowerCase();
-			options.module &&= options.module.toLowerCase();
-		}
-		return tsconfig;
+	if (!tsconfigFile) {
+		return;
 	}
-	throw new Error(`Cannot find tsconfig.json for ${file}`);
+	if (!tsconfig.root) {
+		const options = tsconfig.compilerOptions ??= {};
+		const { paths, baseUrl = "" } = options;
+		tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
+
+		options.inlineSourceMap = true;
+		options.removeComments = true;
+
+		// Avoid modify source path in the source map.
+		delete options.outDir;
+
+		if (paths) {
+			tsconfig.alias = PathAlias.parse(tsconfig, paths);
+		}
+
+		options.target &&= options.target.toLowerCase();
+		options.module &&= options.module.toLowerCase();
+	}
+	return tsconfig as TSConfigEssential;
 }
 
 class PathAlias {
 
 	readonly templates: string[];
+
+	/** String before the wildcard, or the whole pattern if no wildcard found */
 	readonly prefix: string;
+
+	/** String after the wildcard, or undefined if the pattern is exact match */
 	readonly suffix?: string;
 
 	constructor(root: string, key: string, templates: string[]) {
@@ -155,6 +165,9 @@ export async function transform(code: string, filename: string, format?: ScriptT
 	importedCompileFn ??= await detectTypeScriptCompiler();
 
 	const tsconfig = await getTSConfig(filename);
+	if (!tsconfig) {
+		throw new Error(`Cannot find tsconfig.json for ${filename}`);
+	}
 	const compilerOptions = { ...tsconfig.compilerOptions };
 
 	if (format === "module") {
@@ -201,8 +214,10 @@ async function getAlias(id: string, parent?: string) {
 		parent = fileURLToPath(parent);
 	}
 	const tsconfig = await getTSConfig(parent);
-	const alias = tsconfig.alias as PathAlias[];
-	const match = alias?.find(item => item.test(id));
+	if (!tsconfig) {
+		return;
+	}
+	const match = tsconfig.alias?.find(item => item.test(id));
 	if (match) {
 		return match.getPaths(id);
 	}
@@ -210,14 +225,8 @@ async function getAlias(id: string, parent?: string) {
 	return baseUrl ? [resolvePath(baseUrl, id)] : undefined;
 }
 
-/**
- * For a JS file, if it doesn't exist, then look for the corresponding TS source.
- *
- * When both `.ts` and `.js` files exist for a name, it's safe to assume
- * that the `.js` is compiled from the `.ts`.
- *
- * TODO: Cannot intercept require() with non-exists files.
- */
+// TODO: Cannot intercept require() with non-exists files.
+//  https://github.com/nodejs/node/issues/53198
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	const resolvedPaths = await getAlias(specifier, context.parentURL);
 	if (resolvedPaths) {
@@ -233,6 +242,14 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	return doResolve(specifier, context, nextResolve);
 };
 
+/**
+ * For a JS file, if it doesn't exist, then look for the corresponding TS source.
+ *
+ * When both `.ts` and `.js` files exist for a name, it's safe to assume that
+ * the `.js` is compiled from the `.ts`.
+ *
+ * The specifier of `require` with directory and file without extension is already resolved by Node.
+ */
 export const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
