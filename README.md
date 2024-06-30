@@ -7,15 +7,22 @@
 Let Node run TS files or add to your library to give it the ability to execute TypeScript.
 
 * Tiny: [5 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
-* Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
+* Does not bundle a compiler, instead uses the compiler installed in the project.
 * Transform files based on closest `tsconfig.json`.
 * Support `baseDir` & `paths` alias.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
 > [!WARNING]
-> Directory indexes and omit file extensions are only work for `require()`, and `import` when target is set to `c TS files.
+> Directory indexes and omit file extensions are only work for `require()`, and `import` in TS files when `target` is set to `CommonJS`.
 > 
 > Fallback `*.js` import to `*.ts` file is supported.
+
+Supported compilers:
+
+* [SWC](https://swc.rs)
+* [esbuild](https://esbuild.github.io)
+* [sucrase](https://github.com/alangpierce/sucrase)
+* [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function)
 
 Different with builder:
 
@@ -32,6 +39,8 @@ Since TS-Directly does not bundle a compiler, you need to install one of the `@s
 
 * Projects using TypeScript usually have `typescript` installed.
 * Compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used by TS-Directly.
+
+If multiple compilers available, the fastest will be used (see [Performance](#performance)).
 
 ```shell
 pnpm add ts-directly
@@ -65,11 +74,11 @@ Transform the module from TypeScript to JavaScript using a supported compiler, t
 
 * `code`: TypeScript code to compile.
 * `filename`: The filename, must have a valid JS or TS extension.
-* `format`: Specify the output format `commonjs` or `module`, if omitted it is determined automatically.
+* `format`: Specify the output format `commonjs` or `module`, if omitted it will be determined automatically.
 
 Returns a promise of object with properties:
 
-* `format`: `module` if the file is ESM, `commonjs` for CJS.
+* `format`: `module` if the output module is ESM, `commonjs` for CJS.
 * `source`: The JS code.
 * `shortCircuit`: always `true`, make the object satisfies `LoadFnOutput`
 
@@ -99,10 +108,10 @@ OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
 | No. | compiler |        time |  time.SD | time.ratio | filesize | filesize.ratio |
 |----:|---------:|------------:|---------:|-----------:|---------:|---------------:|
-|   0 |      swc |   299.56 ms |  3.12 ms |      0.00% | 8.67 MiB |          0.00% |
-|   1 |  esbuild |   379.90 ms |  9.17 ms |    +26.82% | 8.33 MiB |         -3.94% |
-|   2 |  sucrase |   455.83 ms |  5.47 ms |    +52.17% | 8.93 MiB |         +3.04% |
-|   3 |      tsc | 2,847.94 ms | 65.22 ms |   +850.71% | 8.74 MiB |         +0.80% |
+|   0 |      swc |   344.24 ms |  1.25 ms |      0.00% | 8.45 MiB |          0.00% |
+|   1 |  esbuild |   422.70 ms |  6.73 ms |    +22.79% | 8.33 MiB |         -1.49% |
+|   2 |  sucrase |   481.72 ms |  7.07 ms |    +39.94% | 8.93 MiB |         +5.67% |
+|   3 |      tsc | 2,844.11 ms | 22.32 ms |   +726.21% | 8.74 MiB |         +3.37% |
 
 ## CONTRIBUTING
 
