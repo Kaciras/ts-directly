@@ -1,4 +1,5 @@
-import { readFileSync } from "fs";
+import { access, readFile } from "fs/promises";
+import { fileURLToPath } from "url";
 import { defineSuite, Profiler } from "esbench";
 import { names } from "../src/compiler.ts";
 import { load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
@@ -7,14 +8,21 @@ import { getFilesToTransform, setCompiler } from "./helper.ts";
 const urls = await getFilesToTransform();
 console.info(`Benchmark for import ${urls.length} files.`);
 
-function nextResolve(url: string) {
-	return { url, importAttributes: {} };
+async function nextResolve(url: string) {
+	try {
+		await access(fileURLToPath(url));
+		return { url, importAttributes: {} };
+	} catch {
+		throw Object.assign(new Error(), {
+			code: "ERR_MODULE_NOT_FOUND",
+		});
+	}
 }
 
-function nextLoad(url: string) {
+async function nextLoad(url: string) {
 	return {
 		format: "ts" as any,
-		source: readFileSync(url.slice(8)),
+		source: await readFile(url.slice(8)),
 	};
 }
 

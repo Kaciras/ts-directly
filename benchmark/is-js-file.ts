@@ -1,7 +1,7 @@
 import { defineSuite } from "esbench";
 
 /*
- * pnpm exec esbench --file url-matching.ts
+ * pnpm exec esbench --file is-js-file.ts
  *
  * | No. |            Name |     time | time.SD |
  * | --: | --------------: | -------: | ------: |
