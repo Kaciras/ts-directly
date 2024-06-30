@@ -8,9 +8,14 @@ Let Node run TS files or add to your library to give it the ability to execute T
 
 * Tiny: [4 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
-* Transform files based on `tsconfig.json`.
+* Transform files based on closest `tsconfig.json`.
+* Support `baseDir` & `paths` alias.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
-* Support fallback `*.js` imports to `*.ts` files.
+
+> [WARNING!]
+> Directory indexes and omit file extensions are only work for `require()`, and `import` when target is set to `c TS files.
+> 
+> Fallback `*.js` import to `*.ts` file is supported.
 
 Different with builder:
 
@@ -77,12 +82,6 @@ const tsCode = readFileSync(file, "utf8");
 
 const { source, format } = await transform(tsCode, file);
 ```
-
-## No Alias Support
-
-Resolving alias is outside of the scope for TS-Directly, because TypeScript does not change how import paths are emitted by `tsc`.
-
-Also, directory import and omitting file extension are not supported.
 
 ## Configuration
 
