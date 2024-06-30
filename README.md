@@ -6,13 +6,13 @@
 
 Let Node run TS files or add to your library to give it the ability to execute TypeScript.
 
-* Tiny: [4 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
+* Tiny: [5 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
 * Automatic detects installed compilers, support [SWC](https://swc.rs), [esbuild](https://esbuild.github.io), [sucrase](https://github.com/alangpierce/sucrase) and [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function).
 * Transform files based on closest `tsconfig.json`.
 * Support `baseDir` & `paths` alias.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
-> [WARNING!]
+> [!WARNING]
 > Directory indexes and omit file extensions are only work for `require()`, and `import` when target is set to `c TS files.
 > 
 > Fallback `*.js` import to `*.ts` file is supported.
