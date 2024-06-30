@@ -16,9 +16,6 @@ const ASSET_URL = "https://github.com/storybookjs/storybook/archive/refs/tags/v8
 const dataDir = join(import.meta.dirname, "../bench-data");
 
 async function downloadAssets() {
-	if (existsSync(dataDir)) {
-		return;
-	}
 	console.info("Downloading & extracting benchmark data...");
 	const { body, ok, status } = await fetch(ASSET_URL);
 	if (!ok) {
@@ -39,9 +36,11 @@ async function downloadAssets() {
 }
 
 export async function getFilesToTransform() {
-	await downloadAssets();
+	if (!existsSync(dataDir)) {
+		await downloadAssets();
+	}
 	return (globSync("./code/**/*.ts", { cwd: dataDir }) as string[])
-		.map(file => pathToFileURL(join(dataDir, file)).toString());
+		.map(file => pathToFileURL(join(dataDir, file)).href);
 }
 
 // Bypass compiler instance cache.

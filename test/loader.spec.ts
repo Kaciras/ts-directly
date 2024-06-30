@@ -68,7 +68,7 @@ it("should support require directory and omit extension", async () => {
 it("should support resolve file without tsconfig.json", () => {
 	const root = mkdtempSync(tmpdir() + "/test-");
 	const pkg = root + "/node_modules/pkg";
-	const parent = pathToFileURL(root + "/main.js").toString();
+	const parent = pathToFileURL(root + "/main.js").href;
 	try {
 		mkdirSync(pkg, { recursive: true });
 		writeFileSync(pkg + "/index.js", "");
@@ -81,9 +81,10 @@ it("should support resolve file without tsconfig.json", () => {
 });
 
 describe("Path Alias", () => {
-	const moduleTsURL = pathToFileURL("test/fixtures/module.ts").toString();
-	const top = pathToFileURL("test/alias/main.js").toString();
-	const nested = pathToFileURL("test/alias/nested/main.js").toString();
+	const moduleTs = pathToFileURL("test/fixtures/module.ts").href;
+	const pkgEntry = pathToFileURL("test/node_modules/_pkg/foo.ts").href;
+	const top = pathToFileURL("test/alias/main.js").href;
+	const nested = pathToFileURL("test/alias/nested/main.js").href;
 
 	const aliasImports = [
 		"prefix/module.ts",
@@ -93,25 +94,23 @@ describe("Path Alias", () => {
 	];
 
 	for (const i of aliasImports) it(`should resolve: ${i}`, async () => {
-		assert.strictEqual(import.meta.resolve(i, top), moduleTsURL);
+		assert.strictEqual(import.meta.resolve(i, top), moduleTs);
 	});
 
 	it("should look at baseUrl", () => {
-		assert.strictEqual(import.meta.resolve("module.js", nested), moduleTsURL);
+		assert.strictEqual(import.meta.resolve("module.js", nested), moduleTs);
 	});
 
 	it("should fallback to the original", () => {
-		const url = pathToFileURL("test/node_modules/_pkg/foo.ts").toString();
-		assert.strictEqual(import.meta.resolve("_pkg", nested), url);
+		assert.strictEqual(import.meta.resolve("_pkg", nested), pkgEntry);
+	});
+
+	it("should skip declaration files", () => {
+		assert.strictEqual(import.meta.resolve("_pkg", top), pkgEntry);
 	});
 
 	it("should not inherit alias options", () => {
 		assert.throws(() => import.meta.resolve("exact-match", nested));
-	});
-
-	it("should skip declaration files", () => {
-		const url = import.meta.resolve("_pkg", top);
-		assert.strictEqual(url, pathToFileURL("test/node_modules/_pkg/foo.ts").toString());
 	});
 });
 

@@ -4,7 +4,7 @@ import { load, resolve } from "../src/loader.ts";
 import { setCompiler } from "./helper.js";
 
 function createMockImport(specifier: string) {
-	const url = pathToFileURL(specifier).toString();
+	const url = pathToFileURL(specifier).href;
 
 	function nextResolve() {
 		return { url, importAttributes: {} };

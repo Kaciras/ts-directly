@@ -158,7 +158,7 @@ let importedCompileFn: CompileFn;
  *
  * @param code TypeScript code to compile.
  * @param filename The filename must have a valid JS or TS extension.
- * @param format Specify the output format, if omitted it is determined automatically.
+ * @param format Specify the output format, if omitted it will be determined automatically.
  * @return JS source and format, and additional properties to satisfy `load` hooks.
  */
 export async function transform(code: string, filename: string, format?: ScriptType) {
@@ -214,35 +214,33 @@ async function getAlias(id: string, parent?: string) {
 	if (match) {
 		return match.getPaths(id);
 	}
-	const { baseUrl } = tsconfig.compilerOptions ?? {};
-	return baseUrl ? [resolvePath(baseUrl, id)] : undefined;
+	const { baseUrl } = tsconfig.compilerOptions;
+	return baseUrl ? [join(tsconfig.root, id)] : undefined;
 }
 
 // TODO: Cannot intercept require() with non-exists files.
 //  https://github.com/nodejs/node/issues/53198
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
-	const possiblePaths = await getAlias(specifier, context.parentURL);
-	if (possiblePaths) {
-		for (const path of possiblePaths) {
-			if (path.endsWith(".d.ts")) {
-				continue; // Alias can be declaration files.
-			}
-			const url = pathToFileURL(path).toString();
-			try {
-				return await doResolve(url, context, nextResolve);
-			} catch (e) {
-				if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
-			}
+	const paths = await getAlias(specifier, context.parentURL);
+	for (const path of paths ?? []) {
+		if (path.endsWith(".d.ts")) {
+			continue; // Alias can be declaration files.
+		}
+		const url = pathToFileURL(path).href;
+		try {
+			return await doResolve(url, context, nextResolve);
+		} catch (e) {
+			if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
 		}
 	}
 	return doResolve(specifier, context, nextResolve);
 };
 
 /**
- * For a JS file, if it doesn't exist, then look for the corresponding TS source.
+ * Try to find the JS file, if it doesn't exist, then look for the corresponding TS source.
  *
- * When both `.ts` and `.js` files exist for a name, it's safe to assume that
- * the `.js` is compiled from the `.ts`.
+ * When both `.ts` and `.js` files exist for a name, it's safe to assume that the JS file
+ * is compiled from the TS file, so we choose the JS file to avoid transformation.
  *
  * The specifier of `require` with directory and file without extension is already resolved by Node.
  */
