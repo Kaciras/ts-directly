@@ -82,8 +82,8 @@ it("should support resolve file without tsconfig.json", () => {
 
 describe("Path Alias", () => {
 	const moduleTsURL = pathToFileURL("test/fixtures/module.ts").toString();
-	const topImporter = pathToFileURL("test/alias/main.js").toString();
-	const subImporter = pathToFileURL("test/alias/nested/main.js").toString();
+	const top = pathToFileURL("test/alias/main.js").toString();
+	const nested = pathToFileURL("test/alias/nested/main.js").toString();
 
 	const aliasImports = [
 		"prefix/module.ts",
@@ -93,20 +93,25 @@ describe("Path Alias", () => {
 	];
 
 	for (const i of aliasImports) it(`should resolve: ${i}`, async () => {
-		assert.strictEqual(import.meta.resolve(i, topImporter), moduleTsURL);
+		assert.strictEqual(import.meta.resolve(i, top), moduleTsURL);
 	});
 
 	it("should look at baseUrl", () => {
-		assert.strictEqual(import.meta.resolve("module.js", subImporter), moduleTsURL);
+		assert.strictEqual(import.meta.resolve("module.js", nested), moduleTsURL);
 	});
 
 	it("should fallback to the original", () => {
 		const url = pathToFileURL("test/node_modules/_pkg/foo.ts").toString();
-		assert.strictEqual(import.meta.resolve("_pkg", subImporter), url);
+		assert.strictEqual(import.meta.resolve("_pkg", nested), url);
 	});
 
 	it("should not inherit alias options", () => {
-		assert.throws(() => import.meta.resolve("exact-match", subImporter));
+		assert.throws(() => import.meta.resolve("exact-match", nested));
+	});
+
+	it("should skip declaration files", () => {
+		const url = import.meta.resolve("_pkg", top);
+		assert.strictEqual(url, pathToFileURL("test/node_modules/_pkg/foo.ts").toString());
 	});
 });
 

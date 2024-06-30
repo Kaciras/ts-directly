@@ -228,10 +228,13 @@ async function getAlias(id: string, parent?: string) {
 // TODO: Cannot intercept require() with non-exists files.
 //  https://github.com/nodejs/node/issues/53198
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
-	const resolvedPaths = await getAlias(specifier, context.parentURL);
-	if (resolvedPaths) {
-		for (const newPath of resolvedPaths) {
-			const url = pathToFileURL(newPath).toString();
+	const possiblePaths = await getAlias(specifier, context.parentURL);
+	if (possiblePaths) {
+		for (const path of possiblePaths) {
+			if (path.endsWith(".d.ts")) {
+				continue; // Alias can be declaration files.
+			}
+			const url = pathToFileURL(path).toString();
 			try {
 				return await doResolve(url, context, nextResolve);
 			} catch (e) {
