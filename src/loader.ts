@@ -199,23 +199,16 @@ export async function transform(code: string, filename: string, format?: ScriptT
 }
 
 async function getAlias(id: string, parent?: string) {
-	if (/^\.{0,2}\//.test(id)) {
-		return; // Alias are only work for bare specifier.
-	}
-	if (!parent) {
-		parent = "module.ts";
-	} else {
-		if (parent.includes("/node_modules/")) {
-			return;
-		}
-		if (!parent.startsWith("file:")) {
-			return;
-		}
-		parent = fileURLToPath(parent);
-	}
-	const tsconfig = await getTSConfig(parent);
-	if (!tsconfig) {
+	if (
+		/^\.{0,2}\//.test(id) ||		  // Alias are only for bare specifier.
+		!parent?.startsWith("file:") ||	  // tsconfig is only apply to local files.
+		parent.includes("/node_modules/") // Library should not use alias.
+	) {
 		return;
+	}
+	const tsconfig = await getTSConfig(fileURLToPath(parent));
+	if (!tsconfig) {
+		return; // The package of `parent` does not have tsconfig.
 	}
 	const match = tsconfig.alias?.find(item => item.test(id));
 	if (match) {
