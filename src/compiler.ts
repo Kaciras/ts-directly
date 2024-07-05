@@ -141,7 +141,11 @@ export const names = ["swc", "esbuild", "sucrase", "tsc"];
 export async function detectTypeScriptCompiler() {
 	const name = process.env.TS_COMPILER;
 	if (name) {
-		return compilers[names.indexOf(name)]();
+		const index = names.indexOf(name);
+		if (index === -1) {
+			throw new Error(`Invalid TS_COMPILER value: ${name}`);
+		}
+		return compilers[index]();
 	}
 	for (const create of compilers) {
 		try {

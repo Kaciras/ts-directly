@@ -42,7 +42,10 @@ describe("detectTypeScriptCompiler", () => {
 
 	it("should throw error for invalid value", () => {
 		process.env.TS_COMPILER = "FOO_BAR";
-		return assert.rejects(detectTypeScriptCompiler());
+		return assert.rejects(detectTypeScriptCompiler(), {
+			name: "Error",
+			message: "Invalid TS_COMPILER value: FOO_BAR",
+		});
 	});
 });
 
