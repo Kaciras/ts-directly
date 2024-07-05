@@ -140,7 +140,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
  *
  * The specifier of `require` with directory and file without extension is already resolved by Node.
  */
-export const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
+const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
