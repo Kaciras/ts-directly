@@ -12,10 +12,10 @@ Let Node run TS files or add to your library to give it the ability to execute T
 * Support `baseDir` & `paths` alias.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
-> [!WARNING]
-> Directory indexes and omit file extensions are only work for `require()`, and `import` in TS files when `target` is set to `CommonJS`.
+> [!NOTE]
+> Directory indexes and omit file extensions are only work for `require()` and `import` in TS files when `target` is set to `CommonJS`.
 > 
-> Fallback `*.js` import to `*.ts` file is supported.
+> Redirection of `*.js` imports to `*.ts` files is supported, but TS-Directly always tries to resolve to the original file first.
 
 Supported compilers:
 
@@ -130,8 +130,8 @@ Then you can use the loader, or run tests:
 pnpm run test
 ```
 
-Run benchmark (files in `benchmark/`):
+Run benchmark (file in `benchmark/`):
 
 ```shell
-pnpm exec esbench --file loader.ts
+pnpm exec esbench --file <filename.ts>
 ```

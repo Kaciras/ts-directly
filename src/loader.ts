@@ -23,6 +23,7 @@ const node_modules = sep + "node_modules";
  *
  * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
  * @see https://github.com/dominikg/tsconfck
+ * @return tsconfig JSON object, with some additional properties.
  */
 async function getTSConfig(file: string) {
 	const { tsconfig, tsconfigFile } = await parse(file, {
@@ -53,13 +54,22 @@ async function getTSConfig(file: string) {
 }
 
 class PathAlias {
-
+	/**
+	 * File paths (have resolved with `baseUrl`) provided for the path mapping.
+	 */
 	readonly templates: string[];
 
-	/** String before the wildcard, or the whole pattern if no wildcard found */
+	/**
+	 * String before the wildcard, or the whole pattern if no wildcard found.
+	 *
+	 * Since paths patterns can only contain a single * wildcard, we split it
+	 * into prefix and suffix and use `startsWith` to match specifiers.
+	 */
 	readonly prefix: string;
 
-	/** String after the wildcard, or undefined if the pattern is exact match */
+	/**
+	 * String after the wildcard, or undefined if the pattern is exact match.
+	 */
 	readonly suffix?: string;
 
 	constructor(root: string, key: string, templates: string[]) {
@@ -198,6 +208,10 @@ export async function transform(code: string, filename: string, format?: ScriptT
 	};
 }
 
+/*
+ * https://www.typescriptlang.org/docs/handbook/modules/reference.html#paths
+ * https://www.typescriptlang.org/docs/handbook/modules/reference.html#baseurl
+ */
 async function getAlias(id: string, parent?: string) {
 	if (
 		/^\.{0,2}\//.test(id) ||		  // Alias are only for bare specifier.

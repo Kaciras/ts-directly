@@ -1,7 +1,9 @@
 import { defineSuite } from "esbench";
 
 /*
- * pnpm exec esbench --file is-js-file.ts
+ * Race to see which is faster at handwriting matcher and regular expression.
+ *
+ * Run benchmark: pnpm exec esbench --file is-js-file.ts
  *
  * | No. |            Name |     time | time.SD |
  * | --: | --------------: | -------: | ------: |

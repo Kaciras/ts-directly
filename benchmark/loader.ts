@@ -39,7 +39,7 @@ const fileSizeProfiler: Profiler = {
 		analysis: 1,
 		lowerIsBetter: true,
 	}),
-	async onCase(ctx, case_, metrics) {
+	async onCase(_, case_, metrics) {
 		const results = await case_.invoke() as any[];
 		metrics.filesize = results.reduce((v, c) => v + c.source.length, 0);
 	},

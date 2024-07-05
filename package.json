@@ -29,7 +29,8 @@
 	],
 	"scripts": {
 		"build": "tsc",
-		"test": "node --experimental-import-meta-resolve --import ./lib/register.js --test test/**/*.spec.ts"
+		"test": "node --experimental-import-meta-resolve --import ./lib/register.js --test test/*.spec.ts ",
+		"test:only": "node --experimental-import-meta-resolve --import ./lib/register.js --test --test-only test/*.spec.ts"
 	},
 	"dependencies": {
 		"tsconfck": "^3.1.0"

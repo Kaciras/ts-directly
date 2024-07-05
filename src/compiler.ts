@@ -9,9 +9,81 @@ import type { Transform as SucraseTransform } from "sucrase";
  *
  * @param code TypeScript code to compile.
  * @param filename The filename associated with the code currently being compiled
- * @param options The `compilerOptions` property of `tsconfig.json`
+ * @param options The `compilerOptions` of `tsconfig.json`
  */
 export type CompileFn = (code: string, filename: string, options: any) => Promise<string> | string;
+
+async function swcCompiler(): Promise<CompileFn> {
+	const swc = await import("@swc/core");
+
+	return async (code, filename, opts) => {
+		const {
+			target = "es2022", module = "esnext",
+			experimentalDecorators, useDefineForClassFields,
+		} = opts;
+
+		const options: SwcOptions = {
+			filename,
+			module: {
+				importInterop: opts.esModuleInterop ? "swc" : "none",
+				type: module === "commonjs" ? "commonjs" : "es6",
+			},
+			sourceMaps: "inline",
+			inlineSourcesContent: false,
+			swcrc: false,
+			jsc: {
+				target: target === "esnext" ? "es2022" : target,
+				externalHelpers: opts.importHelpers,
+				minify: {
+					compress: false,
+					mangle: false,
+				},
+				parser: {
+					decorators: experimentalDecorators,
+					syntax: "typescript",
+					tsx: filename.endsWith("x"),
+				},
+				transform: {
+					useDefineForClassFields,
+					legacyDecorator: experimentalDecorators,
+					decoratorMetadata: opts.emitDecoratorMetadata,
+				},
+			},
+		};
+
+		options.jsc!.transform!.react = {
+			runtime: opts.jsx?.startsWith("react-") ? "automatic" : "classic",
+			pragma: opts.jsxFactory,
+			pragmaFrag: opts.jsxFragmentFactory,
+			importSource: opts.jsxImportSource ?? "react",
+		};
+
+		return (await swc.transform(code, options)).code;
+	};
+}
+
+async function esbuildCompiler(): Promise<CompileFn> {
+	const esbuild = await import("esbuild");
+
+	return async (code, sourcefile, compilerOptions) => {
+		const { target, module } = compilerOptions;
+
+		const options: TransformOptions = {
+			sourcefile,
+			tsconfigRaw: { compilerOptions },
+			target,
+			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
+			sourcemap: "inline",
+			sourcesContent: false,
+		};
+
+		if (module === "commonjs") {
+			options.format = "cjs";
+		}
+
+		return (await esbuild.transform(code, options)).code;
+	};
+}
 
 async function sucraseCompiler(): Promise<CompileFn> {
 	const { transform } = await import("sucrase");
@@ -48,82 +120,6 @@ async function sucraseCompiler(): Promise<CompileFn> {
 	};
 }
 
-async function swcCompiler(): Promise<CompileFn> {
-	const swc = await import("@swc/core");
-
-	return async (code, filename, opts) => {
-		const {
-			target = "es2022", module = "esnext",
-			experimentalDecorators, useDefineForClassFields,
-		} = opts;
-
-		const options: SwcOptions = {
-			filename,
-			module: {
-				importInterop: opts.esModuleInterop ? "swc" : "none",
-				type: "es6",
-			},
-			sourceMaps: "inline",
-			inlineSourcesContent: false,
-			swcrc: false,
-			jsc: {
-				target: target === "esnext" ? "es2022" : target,
-				externalHelpers: opts.importHelpers,
-				minify: {
-					compress: false,
-					mangle: false,
-				},
-				parser: {
-					decorators: experimentalDecorators,
-					syntax: "typescript",
-					tsx: filename.endsWith("x"),
-				},
-				transform: {
-					useDefineForClassFields,
-					legacyDecorator: experimentalDecorators,
-					decoratorMetadata: opts.emitDecoratorMetadata,
-				},
-			},
-		};
-
-		options.jsc!.transform!.react = {
-			runtime: opts.jsx?.startsWith("react-") ? "automatic" : "classic",
-			pragma: opts.jsxFactory,
-			pragmaFrag: opts.jsxFragmentFactory,
-			importSource: opts.jsxImportSource ?? "react",
-		};
-
-		if (module === "commonjs") {
-			options.module!.type = "commonjs";
-		}
-
-		return (await swc.transform(code, options)).code;
-	};
-}
-
-async function esbuildCompiler(): Promise<CompileFn> {
-	const esbuild = await import("esbuild");
-
-	return async (code, sourcefile, compilerOptions) => {
-		const { target, module } = compilerOptions;
-
-		const options: TransformOptions = {
-			sourcefile,
-			tsconfigRaw: { compilerOptions },
-			target,
-			loader: sourcefile.endsWith("x") ? "tsx" : "ts",
-			sourcemap: "inline",
-			sourcesContent: false,
-		};
-
-		if (module === "commonjs") {
-			options.format = "cjs";
-		}
-
-		return (await esbuild.transform(code, options)).code;
-	};
-}
-
 async function tscCompiler(): Promise<CompileFn> {
 	// TODO: TS 5.5 has fixed the ugly import.
 	const { default: ts } = await import("typescript");
@@ -140,8 +136,7 @@ export const compilers = [swcCompiler, esbuildCompiler, sucraseCompiler, tscComp
 export const names = ["swc", "esbuild", "sucrase", "tsc"];
 
 /**
- * Import a supported TypeScript compiler,
- * or throw an exception if none of them are installed.
+ * Import a supported TypeScript compiler, or throw an exception if none of them installed.
  */
 export async function detectTypeScriptCompiler() {
 	const name = process.env.TS_COMPILER;
