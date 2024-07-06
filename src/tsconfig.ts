@@ -64,11 +64,11 @@ class PathAlias {
 	 */
 	readonly suffix?: string;
 
-	constructor(root: string, key: string, templates: string[]) {
+	constructor(root: string, key: string, list: string[]) {
 		const parts = key.split("*");
 		this.prefix = parts[0];
 		this.suffix = parts[1];
-		this.templates = templates.map(p => join(root, p));
+		this.templates = list.map(p => join(root, p));
 	}
 
 	test(id: string) {
@@ -102,23 +102,25 @@ class PathAlias {
  *
  * https://www.typescriptlang.org/docs/handbook/modules/reference.html#paths
  * https://www.typescriptlang.org/docs/handbook/modules/reference.html#baseurl
+ *
+ * @return Possible paths of the specifier.
  */
 export async function getAlias(id: string, parent?: string) {
 	if (
 		/^\.{0,2}\//.test(id) ||		  // Alias are only for bare specifier.
-		!parent?.startsWith("file:") ||	  // tsconfig is only apply to local files.
+		!parent?.startsWith("file:") ||	  // tsconfig is only include local files.
 		parent.includes("/node_modules/") // Library should not use alias.
 	) {
-		return;
+		return [];
 	}
 	const tsconfig = await getTSConfig(fileURLToPath(parent));
 	if (!tsconfig) {
-		return; // The package of `parent` does not have tsconfig.
+		return []; // The package of `parent` does not have tsconfig.
 	}
 	const { alias, compilerOptions, root } = tsconfig;
 	const match = alias?.find(item => item.test(id));
 	if (match) {
 		return match.getPaths(id);
 	}
-	return compilerOptions.baseUrl ? [join(root, id)] : undefined;
+	return compilerOptions.baseUrl ? [join(root, id)] : [];
 }

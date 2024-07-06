@@ -1,8 +1,11 @@
 {
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
+		// `baseUrl` specifies a directory that bare specifiers are resolved from.
 		"baseUrl": "../../fixtures",
 		"paths": {
+			// If resolution fails for one path, the next one in the array will be
+			// attempted until resolution succeeds or the end of the array is reached..
 			"attribute.ts": ["INVALID"],
 		}
 	}

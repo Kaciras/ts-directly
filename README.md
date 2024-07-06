@@ -13,7 +13,7 @@ Let Node run TS files or add to your library to give it the ability to execute T
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.
 
 > [!NOTE]
-> Directory indexes and omit file extensions are only work for `require()` and `import` in TS files when `target` is set to `CommonJS`.
+> Directory indexes and omit file extensions are only work for `require()`, and does not support alias.
 > 
 > Redirection of `*.js` imports to `*.ts` files is supported, but TS-Directly always tries to resolve to the original file first.
 

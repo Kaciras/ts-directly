@@ -9,11 +9,38 @@ type ScriptType = "commonjs" | "module";
 
 export const typeCache = new Map<string, ScriptType>();
 
+// eslint-disable-next-line no-sequences
+const addToCache = (k: string, v: ScriptType) => (typeCache.set(k, v), v);
+
 const node_modules = sep + "node_modules";
 
-function cacheAndReturn(dir: string, type: ScriptType) {
-	typeCache.set(dir, type);
-	return type;
+/**
+ * Find nearest package.json and detect the file is ESM or CJS.
+ *
+ * typescript has `getImpliedNodeFormatForFile`, but we do not require user install it.
+ * Node also has such a function, but does not export it.
+ *
+ * https://nodejs.org/docs/latest/api/packages.html#type
+ */
+function getPackageType(filename: string): ScriptType {
+	const dir = dirname(filename);
+
+	const cached = typeCache.get(dir);
+	if (cached) {
+		return cached;
+	}
+	try {
+		const json = readFileSync(join(dir, "package.json"), "utf8");
+		return addToCache(dir, JSON.parse(json).type ?? "commonjs");
+	} catch (e) {
+		if (e.code !== "ENOENT") throw e;
+	}
+
+	if (!dir || dir.endsWith(node_modules)) {
+		return addToCache(dir, "commonjs");
+	} else {
+		return addToCache(dir, getPackageType(dir));
+	}
 }
 
 /**
@@ -37,35 +64,6 @@ function detectModuleType(filename: string) {
 	}
 }
 
-/**
- * Find nearest package.json and detect the file is ESM or CJS.
- *
- * typescript has `getImpliedNodeFormatForFile`, but we do not require user install it.
- * Node also has such a function, but does not export it.
- *
- * https://nodejs.org/docs/latest/api/packages.html#type
- */
-function getPackageType(filename: string): ScriptType {
-	const dir = dirname(filename);
-
-	const cached = typeCache.get(dir);
-	if (cached) {
-		return cached;
-	}
-	try {
-		const json = readFileSync(join(dir, "package.json"), "utf8");
-		return cacheAndReturn(dir, JSON.parse(json).type ?? "commonjs");
-	} catch (e) {
-		if (e.code !== "ENOENT") throw e;
-	}
-
-	if (!dir || dir.endsWith(node_modules)) {
-		return cacheAndReturn(dir, "commonjs");
-	} else {
-		return cacheAndReturn(dir, getPackageType(dir));
-	}
-}
-
 let importedCompileFn: CompileFn;
 
 /**
@@ -86,6 +84,7 @@ export async function transform(code: string, filename: string, format?: ScriptT
 	}
 	const compilerOptions = { ...tsconfig.compilerOptions };
 
+	// Resolve `compilerOptions.module` and `format`.
 	if (format === "module") {
 		const { module = "" } = compilerOptions;
 		if (!module.startsWith("es")) {
@@ -118,7 +117,7 @@ export async function transform(code: string, filename: string, format?: ScriptT
 //  https://github.com/nodejs/node/issues/53198
 export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	const paths = await getAlias(specifier, context.parentURL);
-	for (const path of paths ?? []) {
+	for (const path of paths) {
 		if (path.endsWith(".d.ts")) {
 			continue; // Alias can be declaration files.
 		}
