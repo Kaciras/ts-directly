@@ -4,7 +4,9 @@ import { parse, TSConfckCache } from "tsconfck";
 
 export const tsconfigCache = new TSConfckCache<any>();
 
-interface TSConfigEssential {
+const EMPTY: readonly string[] = [];
+
+interface TSConfigEssentialProperties {
 	root: string;
 	alias?: PathAlias[];
 	compilerOptions: any;
@@ -42,7 +44,7 @@ export async function getTSConfig(file: string) {
 		options.target &&= options.target.toLowerCase();
 		options.module &&= options.module.toLowerCase();
 	}
-	return tsconfig as TSConfigEssential;
+	return tsconfig as TSConfigEssentialProperties;
 }
 
 class PathAlias {
@@ -107,20 +109,20 @@ class PathAlias {
  */
 export async function getAlias(id: string, parent?: string) {
 	if (
-		/^\.{0,2}\//.test(id) ||		  // Alias are only for bare specifier.
+		/^\.{0,2}\//.test(id) ||		  // Alias is only for bare specifier.
 		!parent?.startsWith("file:") ||	  // tsconfig is only include local files.
 		parent.includes("/node_modules/") // Library should not use alias.
 	) {
-		return [];
+		return EMPTY;
 	}
 	const tsconfig = await getTSConfig(fileURLToPath(parent));
 	if (!tsconfig) {
-		return []; // The package of `parent` does not have tsconfig.
+		return EMPTY; // The package of `parent` does not have tsconfig.
 	}
 	const { alias, compilerOptions, root } = tsconfig;
 	const match = alias?.find(item => item.test(id));
 	if (match) {
 		return match.getPaths(id);
 	}
-	return compilerOptions.baseUrl ? [join(root, id)] : [];
+	return compilerOptions.baseUrl ? [join(root, id)] : EMPTY;
 }

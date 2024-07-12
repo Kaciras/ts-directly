@@ -15,7 +15,7 @@ Let Node run TS files or add to your library to give it the ability to execute T
 > [!NOTE]
 > Directory indexes and omit file extensions are only work for `require()`, and does not support alias.
 > 
-> Redirection of `*.js` imports to `*.ts` files is supported, but TS-Directly always tries to resolve to the original file first.
+> Redirection of `*.js` imports to `*.ts` files is supported, but TS-Directly always tries the original file first.
 
 Supported compilers:
 

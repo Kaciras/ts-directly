@@ -2,7 +2,8 @@ import { access, readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { defineSuite, Profiler } from "esbench";
 import { names } from "../src/compiler.ts";
-import { load, resolve, tsconfigCache, typeCache } from "../src/loader.ts";
+import { load, resolve, typeCache } from "../src/loader.ts";
+import { tsconfigCache } from "../src/tsconfig.ts";
 import { getFilesToTransform, setCompiler } from "./helper.ts";
 
 const urls = await getFilesToTransform();

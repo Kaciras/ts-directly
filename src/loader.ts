@@ -119,7 +119,7 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	const paths = await getAlias(specifier, context.parentURL);
 	for (const path of paths) {
 		if (path.endsWith(".d.ts")) {
-			continue; // Alias can be declaration files.
+			continue; // Alias can be a declaration file.
 		}
 		const url = pathToFileURL(path).href;
 		try {
