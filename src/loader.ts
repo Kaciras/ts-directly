@@ -160,12 +160,6 @@ const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
 };
 
 export const load: LoadHook = async (url, context, nextLoad) => {
-	// Lost import attributes when importing json.
-	if (context.format === "json") {
-		context.importAttributes.type = "json";
-		return nextLoad(url, context);
-	}
-
 	const match = /\.[cm]?tsx?$/i.test(url);
 	if (!match || !url.startsWith("file:")) {
 		return nextLoad(url, context);
