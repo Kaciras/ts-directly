@@ -5,7 +5,7 @@ import { createGunzip } from "zlib";
 import { once } from "events";
 import { pathToFileURL } from "url";
 import * as tar from "tar-fs";
-import { CompileFn, compilers, names } from "../src/compiler.js";
+import { CompileFn, compilers, names } from "../src/compiler.ts";
 
 /**
  * Originally used TypeScript's repository, but it doesn't compile with SWC.

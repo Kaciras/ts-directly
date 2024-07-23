@@ -1,7 +1,7 @@
 import { pathToFileURL } from "url";
 import { defineSuite } from "esbench";
 import { load, resolve } from "../src/loader.ts";
-import { setCompiler } from "./helper.js";
+import { setCompiler } from "./helper.ts";
 
 await setCompiler(code => code);
 
