@@ -4,7 +4,7 @@
 ![Node Current](https://img.shields.io/node/v/ts-directly?style=flat-square)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaciras/ts-directly/test.yml?style=flat-square)](https://github.com/Kaciras/ts-directly/actions/workflows/test.yml)
 
-Let Node run TS files or add to your library to give it the ability to execute TypeScript.
+Let Node run TS files, or add to your app to give it the ability to execute TypeScript.
 
 * Tiny: [5 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
 * Does not bundle a compiler, instead uses the compiler installed in the project.
@@ -28,14 +28,13 @@ Different with builder:
 
 * TS-Directly use [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) that is more efficient than builder. After transpiling the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
 
-Why not:
+Why not [ts-node](https://github.com/TypeStrong/ts-node), [tsx](https://github.com/privatenumber/tsx) ...:
 
-* [ts-node](https://github.com/TypeStrong/ts-node) doesn't work when your package type is "module".
-* [tsx](https://github.com/privatenumber/tsx) bundles `esbuild`, while TS-Directly supports several compilers - it's more friendly to projects that don't use `esbuild`.
+* TS-Directly is intended to be an enhancement library for CLI apps, which adapts popular compilers but doesn't bundle them, so that users can use the compiler they already have in their project instead of introducing a new one.
 
 ## Usage
 
-Since TS-Directly does not bundle a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases TS-Directly works out-of-box:
+Since TS-Directly does not have a compiler, you need to install one of the `@swc/core`, `esbuild`, `sucrase`, `typescript`. In the vast majority of cases TS-Directly works out-of-box:
 
 * Projects using TypeScript usually have `typescript` installed.
 * Compilers from other installed packages (e.g. `vite` has dependency `esbuild`) can also be used by TS-Directly.
@@ -102,7 +101,7 @@ TS_COMPILER=tsc && node --import ts-directly/register main.ts
 
 ## Performance
 
-Transform 1322 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
+Simulate importing 1322 files, see [benchmark/loader.ts](https://github.com/Kaciras/ts-directly/blob/master/benchmark/loader.ts).
 
 OS: Windows11, AMD Ryzen 5 5625U, PCIe 3.0 NVMe SSD.
 
