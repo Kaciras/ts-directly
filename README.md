@@ -24,13 +24,18 @@ Supported compilers:
 * [sucrase](https://github.com/alangpierce/sucrase)
 * [tsc](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function)
 
-Different with builder:
+Why not builder:
 
 * TS-Directly use [ESM Loader Hooks](https://nodejs.org/docs/latest/api/module.html#customization-hooks) that is more efficient than builder. After transpiling the code, builder will merge chunks and write the result to files, which takes more time and is redundant for Node.
 
-Why not [ts-node](https://github.com/TypeStrong/ts-node), [tsx](https://github.com/privatenumber/tsx) ...:
+Different with [ts-node](https://github.com/TypeStrong/ts-node), [tsx](https://github.com/privatenumber/tsx) ...:
 
 * TS-Directly is intended to be an enhancement library for CLI apps, which adapts popular compilers but doesn't bundle them, so that users can use the compiler they already have in their project instead of introducing a new one.
+
+VS [--experimental-strip-types](https://github.com/nodejs/loaders/issues/21):
+
+* `--experimental-strip-types` currently is experimental and does not support enums, namespace, alias...
+* TS-Directly exposes the transform API that useful for integration.
 
 ## Usage
 

@@ -1,7 +1,8 @@
 .DS_Store
 .esbench-tmp
 node_modules
-debug.[jt]s
+/debug.[jt]s
+/debug.[cm][jt]s
 /lib
 /coverage
 
