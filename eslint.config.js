@@ -7,7 +7,7 @@ export default [
 	...typescript,
 	{
 		rules: {
-			"kaciras/import-group-sort": "warn",
+			"kaciras/import-specifier-order": "warn",
 			"@typescript-eslint/no-var-requires": "off",
 		},
 	},
