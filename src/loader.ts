@@ -131,6 +131,14 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
 	return doResolve(specifier, context, nextResolve);
 };
 
+function throwIfModuleIsFound(e: any, specifier: string) {
+	if (e.code !== "ERR_MODULE_NOT_FOUND") {
+		throw e;
+	}
+	e.specifier ??= specifier;
+	if (e.specifier !== specifier) throw e;
+}
+
 /**
  * Try to find the JS file, if it doesn't exist, then look for the corresponding TS source.
  *
@@ -143,23 +151,34 @@ const doResolve: ResolveHook = async (specifier, context, nextResolve) => {
 	try {
 		return await nextResolve(specifier, context);
 	} catch (e) {
+		throwIfModuleIsFound(e, specifier);
+
 		// Two regexps is faster than one, see benchmark/url-matching.ts
 		const isFile = /^(?:file:|\.{0,2}\/)/i.test(specifier);
-		const isJSFile = isFile && /\.[cm]?jsx?$/i.test(specifier);
-
-		if (!isJSFile || e.code !== "ERR_MODULE_NOT_FOUND") {
+		if (!isFile || !/\.[cm]?jsx?$/i.test(specifier)) {
 			throw e;
 		}
 		// Replace "j" with "t" in extension and resolve again.
-		if (specifier.at(-1) !== "x") {
-			return nextResolve(specifier.slice(0, -2) + "ts", context);
-		} else {
-			return nextResolve(specifier.slice(0, -3) + "tsx", context);
+		const tsSource = specifier.at(-1) !== "x"
+			? specifier.slice(0, -2) + "ts"
+			: specifier.slice(0, -3) + "tsx";
+
+		try {
+			return await nextResolve(tsSource, context);
+		} catch (e) {
+			throwIfModuleIsFound(e, specifier);
 		}
+		throw e;
 	}
 };
 
 export const load: LoadHook = async (url, context, nextLoad) => {
+	// Lost import attributes when importing json.
+	if (context.format === "json") {
+		context.importAttributes.type = "json";
+		return nextLoad(url, context);
+	}
+
 	const match = /\.[cm]?tsx?$/i.test(url);
 	if (!match || !url.startsWith("file:")) {
 		return nextLoad(url, context);

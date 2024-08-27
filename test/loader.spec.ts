@@ -55,7 +55,7 @@ it("should skip JS files", () => {
 	return assert.rejects(import("./fixtures/invalid.js"), SyntaxError);
 });
 
-// Check if the issues is fixed.
+// Check if https://github.com/nodejs/node/issues/53198 is fixed.
 it("currently cannot intercept require with non-exist file", () => {
 	return assert.rejects(import("./fixtures/require-ne.ts"));
 });
@@ -78,6 +78,10 @@ it("should support resolve file without tsconfig.json", () => {
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+it("should fallback to original if file does not exists", () => {
+	assert.match(import.meta.resolve("./NON_EXISTS.js"), /NON_EXISTS\.js$/);
 });
 
 describe("Path Alias", () => {
