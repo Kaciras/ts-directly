@@ -2,15 +2,15 @@ import { join, resolve as resolvePath } from "path";
 import { fileURLToPath } from "url";
 import { parse, TSConfckCache } from "tsconfck";
 
+interface AliasEntry {
+	root: string;
+	maps?: PathAlias[];
+}
+
 export const tsconfigCache = new TSConfckCache<any>();
+export const aliasCache = new Map<string, AliasEntry>();
 
 const EMPTY: readonly string[] = [];
-
-interface TSConfigEssentialProperties {
-	root: string;
-	alias?: PathAlias[];
-	compilerOptions: any;
-}
 
 /**
  * Parse the closest tsconfig.json, and normalize some options.
@@ -20,16 +20,14 @@ interface TSConfigEssentialProperties {
  * @return tsconfig JSON object, with some additional properties.
  */
 export async function getTSConfig(file: string) {
-	const { tsconfig, tsconfigFile } = await parse(file, {
-		cache: tsconfigCache,
-	});
+	const result = await parse(file, { cache: tsconfigCache });
+	const { tsconfig, tsconfigFile } = result;
 	if (!tsconfigFile) {
 		return;
 	}
-	if (!tsconfig.root) {
+	if (!aliasCache.has(tsconfigFile)) {
 		const options = tsconfig.compilerOptions ??= {};
 		const { paths, baseUrl = "" } = options;
-		tsconfig.root = resolvePath(tsconfigFile, "..", baseUrl);
 
 		options.inlineSourceMap = true;
 		options.removeComments = true;
@@ -37,14 +35,17 @@ export async function getTSConfig(file: string) {
 		// Avoid modify source path in the source map.
 		delete options.outDir;
 
+		const root = resolvePath(tsconfigFile, "..", baseUrl);
+		let maps: PathAlias[] | undefined;
 		if (paths) {
-			tsconfig.alias = PathAlias.parse(tsconfig, paths);
+			maps = PathAlias.parse(root, paths);
 		}
+		aliasCache.set(tsconfigFile, { root, maps });
 
 		options.target &&= options.target.toLowerCase();
 		options.module &&= options.module.toLowerCase();
 	}
-	return tsconfig as TSConfigEssentialProperties;
+	return result;
 }
 
 class PathAlias {
@@ -89,7 +90,7 @@ class PathAlias {
 		return templates.map(t => t.replace("*", s));
 	}
 
-	static parse({ root }: any, paths: Record<string, string[]>) {
+	static parse(root: string, paths: Record<string, string[]>) {
 		const alias: PathAlias[] = [];
 		for (const [key, templates] of Object.entries(paths)) {
 			alias.push(new PathAlias(root, key, templates));
@@ -115,12 +116,13 @@ export async function getAlias(id: string, parent?: string) {
 	) {
 		return EMPTY;
 	}
-	const tsconfig = await getTSConfig(fileURLToPath(parent));
-	if (!tsconfig) {
+	const found = await getTSConfig(fileURLToPath(parent));
+	if (!found) {
 		return EMPTY; // The package of `parent` does not have tsconfig.
 	}
-	const { alias, compilerOptions, root } = tsconfig;
-	const match = alias?.find(item => item.test(id));
+	const { compilerOptions } = found.tsconfig;
+	const { maps, root } = aliasCache.get(found.tsconfigFile)!;
+	const match = maps?.find(item => item.test(id));
 	if (match) {
 		return match.getPaths(id);
 	}

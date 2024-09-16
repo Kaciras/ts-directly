@@ -78,11 +78,11 @@ let importedCompileFn: CompileFn;
 export async function transform(code: string, filename: string, format?: ScriptType) {
 	importedCompileFn ??= await detectTypeScriptCompiler();
 
-	const tsconfig = await getTSConfig(filename);
-	if (!tsconfig) {
+	const found = await getTSConfig(filename);
+	if (!found) {
 		throw new Error(`Cannot find tsconfig.json for ${filename}`);
 	}
-	const compilerOptions = { ...tsconfig.compilerOptions };
+	const compilerOptions = { ...found.tsconfig.compilerOptions };
 
 	// Resolve `compilerOptions.module` and `format`.
 	if (format === "module") {

@@ -111,10 +111,16 @@ describe("Path Alias", () => {
 
 	it("should skip declaration files", () => {
 		assert.strictEqual(import.meta.resolve("_pkg", top), pkgEntry);
+		assert.strictEqual(import.meta.resolve("prefix/module.ts", top), moduleTs);
 	});
 
 	it("should not inherit alias options", () => {
 		assert.throws(() => import.meta.resolve("exact-match", nested));
+	});
+
+	it("should correct cache the alias mapper", () => {
+		const importer = import.meta.resolve("./src/file.js", top);
+		assert.strictEqual(import.meta.resolve("node:fs", importer), "node:fs");
 	});
 });
 
