@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { defineSuite, Profiler } from "esbench";
 import { names } from "../src/compiler.ts";
 import { load, resolve, typeCache } from "../src/loader.ts";
-import { tsconfigCache } from "../src/tsconfig.ts";
+import { tsconfckCache } from "../src/tsconfig.ts";
 import { getFilesToTransform, setCompiler } from "./helper.ts";
 
 const urls = await getFilesToTransform();
@@ -60,7 +60,7 @@ export default defineSuite({
 		await setCompiler(scene.params.compiler);
 
 		scene.benchAsync("load", () => {
-			tsconfigCache.clear();
+			tsconfckCache.clear();
 			typeCache.clear();
 			return Promise.all(urls.map(emulateImport));
 		});
