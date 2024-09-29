@@ -6,8 +6,9 @@
 
 Let Node run TS files, or add to your app to give it the ability to execute TypeScript.
 
+* Transform TS files with **closest tsconfig.json**, monorepo friendly.
+* Does not bundle a compiler, instead **uses the compiler installed in the project.**
 * Tiny: [5 KB](https://pkg-size.dev/ts-directly) + 1 dependency (9 KB) minified.
-* Does not bundle a compiler, instead uses the compiler installed in the project.
 * Transform files based on closest `tsconfig.json`.
 * Support `baseDir` & `paths` alias.
 * Support `.cts` and `.mts` files, as well as `module: "ESNext"`.

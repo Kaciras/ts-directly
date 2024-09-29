@@ -16,7 +16,7 @@ const EMPTY: readonly string[] = [];
  *
  * @param file path to a tsconfig.json or a source file or directory (absolute or relative to cwd)
  * @see https://github.com/dominikg/tsconfck
- * @return tsconfig JSON object, with some additional properties.
+ * @return TSConfckParseResult object, with some additional properties.
  */
 export async function getTSConfig(file: string) {
 	const result = await parse(file, { cache: tsconfckCache }) as TSConfigEntry;
