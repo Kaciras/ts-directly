@@ -52,6 +52,7 @@ it("should support custom conditions", async () => {
 });
 
 it("should skip JS files", () => {
+	// @ts-expect-error
 	return assert.rejects(import("./fixtures/invalid.js"), SyntaxError);
 });
 

@@ -5,6 +5,7 @@ node_modules
 /debug.[cm][jt]s
 /lib
 /coverage
+*.tsbuildinfo
 
 # Log files
 *.log
