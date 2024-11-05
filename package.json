@@ -28,7 +28,7 @@
 		"lib/loader.d.ts"
 	],
 	"scripts": {
-		"build": "tsc",
+		"build": "tsc --build",
 		"test": "node --experimental-import-meta-resolve --import ./lib/register.js --test test/*.spec.ts ",
 		"test:only": "node --experimental-import-meta-resolve --import ./lib/register.js --test --test-only test/*.spec.ts"
 	},
