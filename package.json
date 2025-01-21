@@ -38,11 +38,11 @@
 	"devDependencies": {
 		"@kaciras/eslint-config-core": "^3.2.1",
 		"@kaciras/eslint-config-typescript": "^3.2.1",
-		"@types/node": "^22.10.6",
+		"@types/node": "^22.10.7",
 		"@types/tar-fs": "^2.0.4",
 		"esbench": "^0.7.0",
 		"eslint": "^9.18.0",
-		"tar-fs": "^3.0.7"
+		"tar-fs": "^3.0.8"
 	},
 	"peerDependencies": {
 		"@swc/core": ">=1",
